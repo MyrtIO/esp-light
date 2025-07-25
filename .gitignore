@@ -1,4 +1,7 @@
 .pio
 .vscode
+.cursor
 include/config.h
 config/secrets.yaml
+memory-bank
+.supercode

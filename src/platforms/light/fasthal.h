@@ -17,7 +17,11 @@ public:
 
 	void apply();
 
-	RGBColor* pixels() { return leds_; }
+#ifdef CONFIG_LIGHT_LED_SKIP
+	RGBColor* pixels() { return &leds_[CONFIG_LIGHT_LED_SKIP]; }
+#else
+	RGBColor* pixels() { return &leds_[0]; }
+#endif
 
 private:
 	RGBColor leds_[CONFIG_LIGHT_LED_COUNT];

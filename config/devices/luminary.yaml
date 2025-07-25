@@ -1,22 +1,21 @@
 device:
-  name: MyrtLightBar
-  id: myrt_light_bar
+  name: MyrtLightLuminary
+  id: myrt_light_luminary
 mqtt:
-  namespace: myrt/light_bar
+  namespace: myrt/light_luminary
 light:
   pin_ctl: 18
-  led_count: 85
-  led_skip: 1
+  led_count: 3 # 26 * 15 = 390
   controller: $raw WS2812B
   color:
     correction: 0xFFAA78
-    mireds_initial: 350
+    mireds_initial: 370
     mireds_warm: 500
     mireds_cold: 135
     order: $raw GRB
   brightness:
-    initial: 50
-    connected: 200
-    max: 255
+    initial: 10
+    connected: 30
+    max: 200
   transition:
     color: 700

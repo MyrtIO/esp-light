@@ -24,6 +24,11 @@ uint16_t FastHAL::count() {
 }
 
 void FastHAL::setPixel(const uint16_t index, const RGBColor& color) {
+#ifdef CONFIG_LIGHT_LED_SKIP
+    if (index <= CONFIG_LIGHT_LED_SKIP) {
+        return;
+    }
+#endif
 	leds_[index] = color;
 }
 

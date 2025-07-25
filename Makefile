@@ -1,8 +1,7 @@
-BOARD_TTY = /dev/cu.usbserial-0001
+BOARD_TTY = /dev/cu.SLAB_USBtoUART
 BAUD_RATE = 115200
 
 define ota
-	pio run -e release
 	python scripts/espota.py \
         -i $(1) \
         -p 3200 \
@@ -23,7 +22,7 @@ build:
 
 .PHONY: flash
 flash:
-	@pio run -t upload --upload-port /dev/cu.usbserial-58B90796191 -e release
+	@pio run -t upload --upload-port /dev/cu.SLAB_USBtoUART -e release
 
 .PHONY: bar-config
 bar-config: 
@@ -73,6 +72,22 @@ curtain-ota: curtain-config
 curtain-flash: curtain-config
 	@make flash
 
+.PHONY: luminary-config
+luminary-config: 
+	@$(call config,luminary.yaml)
+
+.PHONY: luminary-build
+luminary-build: luminary-config
+	@make build
+
+.PHONY: luminary-ota
+luminary-ota: luminary-config
+	@$(call ota,MyrtLightLuminary.lan)
+
+.PHONY: luminary-flash
+luminary-flash: luminary-config
+	@make flash
+
 .PHONY: configure
 configure:
 	@pio init --ide vscode
@@ -86,3 +101,19 @@ format:
 		-r 'lib/*.cc' \
 		-r 'lib/*.h' \
 		-r 'include/*.h'
+
+.PHONY: cat-config
+cat-config: 
+	@$(call config,cat.yaml)
+
+.PHONY: cat-build
+cat-build: cat-config
+	@make build
+
+.PHONY: cat-ota
+cat-ota: cat-config
+	@$(call ota,MyrtLightCat.lan)
+
+.PHONY: cat-flash
+cat-flash: cat-config
+	@make flash
