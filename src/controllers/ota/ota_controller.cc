@@ -39,10 +39,10 @@ void OTAController::setup() {
 	});
 }
 void OTAController::loop() {
+    if (!wifi_->connected()) {
+		return;
+	}
 	if (firstConnect_) {
-        if (!wifi_->connected()) {
-            return;
-        }
 		firstConnect_ = false;
 		ArduinoOTA.begin();
 		return;
