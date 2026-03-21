@@ -6,8 +6,9 @@ io::Device lightDevice("MyrtLight");
 
 void setup() {
 	// Enable MQTT logging
+	Serial.begin(115200);
 	auto mqttController = IO_INJECT_INSTANCE(MQTTController);
-	io::Logger::setOutput(mqttController->logStream());
+	io::Logger::setOutput(&Serial);
 
 	lightDevice.setup()
 		// Add platforms

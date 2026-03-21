@@ -34,12 +34,28 @@ void LightPlatform::setup() {
 
 	lightLog.print("starting composer...");
 	composer_.start(hal_, brightness_, pixels_);
+
+	lightLog.print("starting render task...");
+	xTaskCreatePinnedToCore(
+		renderTask,
+		"light_render",
+		4096,
+		this,
+		10,
+		&renderTaskHandle_,
+		1
+	);
 }
 
-// Implementation of the function called at the start of each loop iteration.
-void LightPlatform::loop() {
-	composer_.loop();
+void LightPlatform::renderTask(void* arg) {
+	LightPlatform* self = static_cast<LightPlatform*>(arg);
+	for (;;) {
+		self->composer_.loop();
+		vTaskDelay(1);
+	}
 }
+
+void LightPlatform::loop() {}
 
 RGBColor LightPlatform::getColor() {
 	return pixels_.getColor();

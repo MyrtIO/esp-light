@@ -1,4 +1,4 @@
-BOARD_TTY = /dev/cu.SLAB_USBtoUART
+BOARD_TTY = /dev/cu.wchusbserial58B90790221
 BAUD_RATE = 115200
 
 define ota
@@ -22,10 +22,10 @@ build:
 
 .PHONY: flash
 flash:
-	@pio run -t upload --upload-port /dev/cu.SLAB_USBtoUART -e release
+@pio run -t upload --upload-port $(BOARD_TTY) -e release
 
 .PHONY: bar-config
-bar-config: 
+bar-config:
 	@$(call config,bar.yaml)
 
 .PHONY: bar-build
@@ -41,7 +41,7 @@ bar-flash: bar-config
 	@make flash
 
 .PHONY: ceiling-config
-ceiling-config: 
+ceiling-config:
 	@$(call config,ceiling.yaml)
 
 .PHONY: ceiling-build
@@ -57,7 +57,7 @@ ceiling-flash: bar-config
 	@make flash
 
 .PHONY: curtain-config
-curtain-config: 
+curtain-config:
 	@$(call config,curtain.yaml)
 
 .PHONY: curtain-build
@@ -73,7 +73,7 @@ curtain-flash: curtain-config
 	@make flash
 
 .PHONY: luminary-config
-luminary-config: 
+luminary-config:
 	@$(call config,luminary.yaml)
 
 .PHONY: luminary-build
@@ -103,7 +103,7 @@ format:
 		-r 'include/*.h'
 
 .PHONY: cat-config
-cat-config: 
+cat-config:
 	@$(call config,cat.yaml)
 
 .PHONY: cat-build

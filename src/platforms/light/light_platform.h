@@ -6,6 +6,8 @@
 #include <LightComposer/pixels/pixels_renderer.h>
 #include <LightComposer/pixels/effect_vector.h>
 #include <LightComposer/color/white_color.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <config.h>
 #include "i_light_platform.h"
 #include "fasthal.h"
@@ -48,6 +50,8 @@ class LightPlatform : public io::Unit, public ILightPlatform {
 	void setFPS(uint8_t fps);
 
   private:
+	static void renderTask(void* arg);
+
 	FastHAL hal_;
 	BrightnessRenderer brightness_;
 	PixelsRenderer<void> pixels_;
@@ -57,4 +61,5 @@ class LightPlatform : public io::Unit, public ILightPlatform {
 	mireds_t temperature_ = 0;
 	EffectList<void> effects_;
 	WhiteColor whiteColor_;
+	TaskHandle_t renderTaskHandle_ = nullptr;
 };

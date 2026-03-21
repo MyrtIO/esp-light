@@ -13,7 +13,7 @@ bool StaticEffect::handleFrame(StaticEffectState& state, IPixels& pixels) {
 		return true;
 	}
 	if (state.currentColor == state.targetColor) {
-		return false;
+		return true;
 	}
 
 	state.currentColor = blendColors(state.previousColor, state.targetColor, progress_.get());
