@@ -1,5 +1,5 @@
 #include "static_effect.h"
-#include "LightComposer/color/blend.h"
+#include <LightComposer/color/blend.h>
 
 const char* StaticEffect::getName() {
 	return "static";

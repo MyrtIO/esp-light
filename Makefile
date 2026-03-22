@@ -22,7 +22,7 @@ build:
 
 .PHONY: flash
 flash:
-@pio run -t upload --upload-port $(BOARD_TTY) -e release
+	@pio run -t upload --upload-port $(BOARD_TTY) -e release
 
 .PHONY: bar-config
 bar-config:

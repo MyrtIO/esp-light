@@ -1,7 +1,14 @@
-.pio
+# Editor configurations
 .vscode
 .cursor
+.zed
+.clangd
+
+# Artifacts
+.pio
+.supercode
+.cache
+
+# Secrets
 include/config.h
 config/secrets.yaml
-memory-bank
-.supercode

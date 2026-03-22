@@ -1,8 +1,6 @@
 #include "fill_effect.h"
 #include <LightComposer/math/scale.h>
 
-const uint8_t kGlowSize = 10;
-
 const char* FillEffect::getName() {
 	return "fill";
 }

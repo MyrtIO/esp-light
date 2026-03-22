@@ -18,7 +18,7 @@ bool RainbowEffect::handleFrame(RainbowEffectState& state, IPixels& pixels) {
 		pixels.raw(),
 		pixels.center(),
 		firstColor_, secondColor_, thirdColor_,
-	    FORWARD_HUES
+		FORWARD_HUES
 	);
 	pixels.mirror();
 

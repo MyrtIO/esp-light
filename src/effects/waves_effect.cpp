@@ -1,17 +1,17 @@
 #include "waves_effect.h"
 #include <LightComposer/math/scale.h>
 
-const size_t kLoadingCycleDuration = 1000;
-const scale_t kLoadingFillFract = 200;
+const size_t kWavesCycleDuration = 1000;
+const scale_t kWavesFillFract = 200;
 
 const char* WavesEffect::getName() {
-	return "loading";
+	return "waves";
 }
 
 void WavesEffect::onActivate(WavesEffectState& state, IPixels& pixels) {
 	isReverse_ = false;
-	progress_.start(kLoadingCycleDuration);
-	fillSize_ = scale8(pixels.count() - 1, kLoadingFillFract);
+	progress_.start(kWavesCycleDuration);
+	fillSize_ = scale8(pixels.count() - 1, kWavesFillFract);
 	maxOffset_ = pixels.count() - 1 - fillSize_;
 }
 
@@ -29,7 +29,7 @@ bool WavesEffect::handleFrame(WavesEffectState& state, IPixels& pixels) {
 
 	if (progress_.finished()) {
 		isReverse_ = !isReverse_;
-		progress_.start(kLoadingCycleDuration);
+		progress_.start(kWavesCycleDuration);
 	}
 	return true;
 }
