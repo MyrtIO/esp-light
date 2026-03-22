@@ -85,6 +85,7 @@ static light_color_mode_t color_mode;
 static const light_config_t *light_cfg;
 static uint16_t white_mireds;
 static uint8_t brightness_max;
+static uint8_t requested_brightness;
 
 static portMUX_TYPE state_mutex = portMUX_INITIALIZER_UNLOCKED;
 
@@ -96,8 +97,8 @@ static void apply_cmd(const light_cmd_t *cmd) {
 		lc_set_power(cmd->power);
 		break;
 	case LIGHT_CMD_BRIGHTNESS: {
-		uint8_t b = scale8_video(cmd->brightness, brightness_max);
-		lc_set_brightness(b);
+		requested_brightness = cmd->brightness;
+		lc_set_brightness(scale8_video(cmd->brightness, brightness_max));
 		break;
 	}
 	case LIGHT_CMD_COLOR:
@@ -132,7 +133,7 @@ static void update_state(void) {
 
 	portENTER_CRITICAL(&state_mutex);
 	current_state.power      = lc_get_power();
-	current_state.brightness = lc_get_brightness();
+	current_state.brightness = requested_brightness;
 	current_state.color      = { color.r, color.g, color.b };
 	current_state.color_temp = white_mireds;
 	current_state.effect     = effect_name_of(lc_get_target_effect());
@@ -192,6 +193,7 @@ void light_init(const light_config_t *cfg) {
 	lc_set_color(initial_white);
 	lc_set_transition(cfg->transition_ms);
 	lc_set_effect_force(&lc_fx_static);
+	requested_brightness = cfg->brightness;
 	lc_set_brightness(scale8_video(cfg->brightness, brightness_max));
 	lc_set_power(true);
 	color_mode = LIGHT_MODE_WHITE;
