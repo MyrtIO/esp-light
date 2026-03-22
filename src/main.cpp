@@ -7,14 +7,21 @@
 #include "ota.h"
 
 static const light_config_t light_cfg = {
-	.pin            = CONFIG_LIGHT_PIN_CTL,
-	.led_count      = CONFIG_LIGHT_LED_COUNT,
+	.pin              = CONFIG_LIGHT_PIN_CTL,
+	.led_count        = CONFIG_LIGHT_LED_COUNT,
+#ifdef CONFIG_LIGHT_LED_SKIP
+	.led_skip         = CONFIG_LIGHT_LED_SKIP,
+#else
+	.led_skip         = 0,
+#endif
 	.color_correction = CONFIG_LIGHT_COLOR_CORRECTION,
+	.color_order      = CONFIG_LIGHT_COLOR_ORDER_ID,
 	.color_temp_warm  = CONFIG_LIGHT_COLOR_MIREDS_WARM,
 	.color_temp_cold  = CONFIG_LIGHT_COLOR_MIREDS_COLD,
 	.color_temp_initial = CONFIG_LIGHT_COLOR_MIREDS_INITIAL,
-	.transition_ms  = CONFIG_LIGHT_TRANSITION_COLOR,
-	.brightness     = CONFIG_LIGHT_BRIGHTNESS_INITIAL,
+	.transition_ms    = CONFIG_LIGHT_TRANSITION_COLOR,
+	.brightness       = CONFIG_LIGHT_BRIGHTNESS_INITIAL,
+	.brightness_max   = CONFIG_LIGHT_BRIGHTNESS_MAX,
 };
 
 static const app_wifi_config_t wifi_cfg = {

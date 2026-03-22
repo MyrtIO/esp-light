@@ -43,12 +43,15 @@ struct light_state_t {
 struct light_config_t {
 	uint8_t pin;
 	uint16_t led_count;
+	uint16_t led_skip;
 	uint32_t color_correction;
+	uint8_t color_order;
 	uint16_t color_temp_warm;
 	uint16_t color_temp_cold;
 	uint16_t color_temp_initial;
 	uint16_t transition_ms;
 	uint8_t brightness;
+	uint8_t brightness_max;
 };
 
 void light_init(const light_config_t *cfg);

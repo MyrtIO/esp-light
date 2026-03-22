@@ -1,5 +1,5 @@
-#include <WiFi.h>
 #include "app_wifi.h"
+#include <WiFi.h>
 #include <Arduino.h>
 
 static const app_wifi_config_t *cfg;
