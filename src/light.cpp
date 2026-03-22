@@ -135,7 +135,7 @@ static void update_state(void) {
 	current_state.brightness = lc_get_brightness();
 	current_state.color      = { color.r, color.g, color.b };
 	current_state.color_temp = white_mireds;
-	current_state.effect     = effect_name_of(lc_get_effect());
+	current_state.effect     = effect_name_of(lc_get_target_effect());
 	current_state.color_mode = color_mode;
 	portEXIT_CRITICAL(&state_mutex);
 }

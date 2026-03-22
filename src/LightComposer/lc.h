@@ -42,6 +42,7 @@ rgb_t lc_get_color(void);
 void lc_set_effect(lc_effect_t *effect);
 void lc_set_effect_force(lc_effect_t *effect);
 const lc_effect_t *lc_get_effect(void);
+const lc_effect_t *lc_get_target_effect(void);
 
 /* Transition */
 void lc_set_transition(uint16_t ms);

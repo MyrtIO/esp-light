@@ -173,6 +173,10 @@ const lc_effect_t *lc_get_effect(void) {
     return current_effect;
 }
 
+const lc_effect_t *lc_get_target_effect(void) {
+    return next_effect != NULL ? next_effect : current_effect;
+}
+
 /* Transition */
 
 void lc_set_transition(uint16_t ms) {

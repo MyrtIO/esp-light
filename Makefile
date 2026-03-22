@@ -9,6 +9,10 @@ build:
 flash:
 	@pio run -t upload --upload-port $(BOARD_TTY) -e release
 
+.PHONY: monitor
+monitor:
+	@pio device monitor --no-reconnect --port $(BOARD_TTY) --baud $(BAUD_RATE)
+
 .PHONY: format
 format:
 	@astyle --project=.astylerc -n \
