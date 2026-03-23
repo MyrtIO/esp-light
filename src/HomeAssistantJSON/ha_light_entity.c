@@ -66,8 +66,9 @@ bool ha_light_serialize_config(
 
 	lwjson_serializer_add_string(&ser, LK("schema"), LK("json"));
 	lwjson_serializer_add_bool(&ser, LK("brightness"), 1);
-	lwjson_serializer_add_uint(&ser, LK("max_mireds"), config->max_mireds);
-	lwjson_serializer_add_uint(&ser, LK("min_mireds"), config->min_mireds);
+	lwjson_serializer_add_bool(&ser, LK("color_temp_kelvin"), 1);
+	lwjson_serializer_add_uint(&ser, LK("min_kelvin"), config->min_kelvin);
+	lwjson_serializer_add_uint(&ser, LK("max_kelvin"), config->max_kelvin);
 
 	if (config->effect_count > 0) {
 		lwjson_serializer_add_bool(&ser, LK("effect"), 1);

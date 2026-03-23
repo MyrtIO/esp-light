@@ -32,8 +32,8 @@ static ha_entity_t entity = {
 static ha_light_config_t light_ha_config = {
 	.effects = nullptr,
 	.effect_count = 0,
-	.max_mireds = CONFIG_LIGHT_COLOR_MIREDS_WARM,
-	.min_mireds = CONFIG_LIGHT_COLOR_MIREDS_COLD,
+	.min_kelvin = CONFIG_LIGHT_COLOR_KELVIN_WARM,
+	.max_kelvin = CONFIG_LIGHT_COLOR_KELVIN_COLD,
 };
 
 static char buffer[HA_BUFFER_SIZE];

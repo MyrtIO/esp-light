@@ -46,9 +46,9 @@ struct light_config_t {
 	uint16_t led_skip;
 	uint32_t color_correction;
 	uint8_t color_order;
-	uint16_t color_temp_warm;
-	uint16_t color_temp_cold;
-	uint16_t color_temp_initial;
+	uint16_t kelvin_warm;
+	uint16_t kelvin_cold;
+	uint16_t kelvin_initial;
 	uint16_t transition_ms;
 	uint8_t brightness;
 	uint8_t brightness_max;

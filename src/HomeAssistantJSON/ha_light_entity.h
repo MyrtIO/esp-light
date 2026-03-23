@@ -29,8 +29,8 @@ enum ha_light_field_t {
 typedef struct {
 	const char **effects;
 	uint16_t effect_count;
-	uint16_t max_mireds;
-	uint16_t min_mireds;
+	uint16_t min_kelvin;
+	uint16_t max_kelvin;
 } ha_light_config_t;
 
 typedef struct {

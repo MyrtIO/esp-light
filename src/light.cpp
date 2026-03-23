@@ -87,7 +87,7 @@ static TaskHandle_t render_task_handle;
 static light_state_t current_state;
 static light_color_mode_t color_mode;
 static const light_config_t *light_cfg;
-static uint16_t white_mireds;
+static uint16_t white_kelvin;
 static uint8_t brightness_max;
 static uint8_t requested_brightness;
 
@@ -111,13 +111,13 @@ static void apply_cmd(const light_cmd_t *cmd) {
 		break;
 	case LIGHT_CMD_COLOR_TEMP: {
 		uint16_t temp = cmd->color_temp;
-		if (temp < light_cfg->color_temp_cold || temp > light_cfg->color_temp_warm) {
+		if (temp < light_cfg->kelvin_warm || temp > light_cfg->kelvin_cold) {
 			break;
 		}
 		color_mode = LIGHT_MODE_WHITE;
-		white_mireds = temp;
+		white_kelvin = temp;
 		rgb_t white;
-		lc_kelvin_to_rgb(lc_mireds_to_kelvin(temp), &white);
+		lc_kelvin_to_rgb(temp, &white);
 		lc_set_color(white);
 		break;
 	}
@@ -139,7 +139,7 @@ static void update_state(void) {
 	current_state.power      = lc_get_power();
 	current_state.brightness = requested_brightness;
 	current_state.color      = { color.r, color.g, color.b };
-	current_state.color_temp = white_mireds;
+	current_state.color_temp = white_kelvin;
 	current_state.effect     = effect_name_of(lc_get_target_effect());
 	current_state.color_mode = color_mode;
 	portEXIT_CRITICAL(&state_mutex);
@@ -191,8 +191,8 @@ void light_init(const light_config_t *cfg) {
 	lc_init(&lc_cfg);
 
 	rgb_t initial_white;
-	white_mireds = cfg->color_temp_initial;
-	lc_kelvin_to_rgb(lc_mireds_to_kelvin(cfg->color_temp_initial), &initial_white);
+	white_kelvin = cfg->kelvin_initial;
+	lc_kelvin_to_rgb(cfg->kelvin_initial, &initial_white);
 
 	lc_set_color(initial_white);
 	lc_set_transition(cfg->transition_ms);

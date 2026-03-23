@@ -16,9 +16,9 @@ static const light_config_t light_cfg = {
 #endif
 	.color_correction = CONFIG_LIGHT_COLOR_CORRECTION,
 	.color_order      = CONFIG_LIGHT_COLOR_ORDER_ID,
-	.color_temp_warm  = CONFIG_LIGHT_COLOR_MIREDS_WARM,
-	.color_temp_cold  = CONFIG_LIGHT_COLOR_MIREDS_COLD,
-	.color_temp_initial = CONFIG_LIGHT_COLOR_MIREDS_INITIAL,
+	.kelvin_warm      = CONFIG_LIGHT_COLOR_KELVIN_WARM,
+	.kelvin_cold      = CONFIG_LIGHT_COLOR_KELVIN_COLD,
+	.kelvin_initial   = CONFIG_LIGHT_COLOR_KELVIN_INITIAL,
 	.transition_ms    = CONFIG_LIGHT_TRANSITION_COLOR,
 	.brightness       = CONFIG_LIGHT_BRIGHTNESS_INITIAL,
 	.brightness_max   = CONFIG_LIGHT_BRIGHTNESS_MAX,
