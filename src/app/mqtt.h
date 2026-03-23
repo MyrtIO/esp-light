@@ -13,6 +13,7 @@ struct mqtt_config_t {
 };
 
 void mqtt_init(const mqtt_config_t *cfg);
+void mqtt_set_lwt(const char *topic, const char *message);
 void mqtt_loop(void);
 void mqtt_subscribe(const char *topic, mqtt_handler_t handler);
 void mqtt_publish(const char *topic, const char *payload, bool retain);

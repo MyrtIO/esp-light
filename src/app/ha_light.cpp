@@ -2,6 +2,7 @@
 #include "light.h"
 #include "mqtt.h"
 #include "persistent_data.h"
+#include "device_id.h"
 
 #include "ha_entity.h"
 #include "ha_light_entity.h"
@@ -17,14 +18,10 @@
 #define HA_STATUS_TOPIC       "homeassistant/status"
 #define HA_BIRTH_PAYLOAD      "online"
 
-static const ha_device_t ha_device = {
-	.name = CONFIG_DEVICE_NAME,
-	.id = CONFIG_DEVICE_ID,
-	.mqtt_namespace = CONFIG_MQTT_NAMESPACE,
-};
+static ha_device_t ha_device;
 
 static ha_entity_t entity = {
-	.name = "Light",
+	.name = "Свет",
 	.icon = "mdi:led-strip-variant",
 	.identifier = "light",
 	.component = "light",
@@ -143,8 +140,16 @@ static void on_ha_status(const uint8_t *payload, uint16_t length) {
 }
 
 void ha_light_init(void) {
+	ha_device.name = device_name();
+	ha_device.id = device_id();
+	ha_device.mqtt_namespace = device_id();
+
 	light_ha_config.effects = light_effect_names();
 	light_ha_config.effect_count = light_effect_count();
+	mqtt_set_lwt(
+		ha_entity_availability_topic(&entity),
+		HA_AVAILABILITY_OFFLINE
+	);
 	mqtt_subscribe(ha_entity_command_topic(&entity), on_command);
 	mqtt_subscribe(HA_STATUS_TOPIC, on_ha_status);
 }
@@ -159,6 +164,7 @@ void ha_light_loop(void) {
 
 	if (!was_connected) {
 		was_connected = true;
+		mqtt_publish(ha_entity_availability_topic(&entity), HA_AVAILABILITY_ONLINE, true);
 		publish_discovery();
 		publish_state();
 		last_config_report = now;

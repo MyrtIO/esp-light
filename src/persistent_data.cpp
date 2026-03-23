@@ -26,7 +26,7 @@ void persistent_data_load(persistent_data_t *data) {
 	load_string(prefs, "mqtt_pass",   data->mqtt_password,  sizeof(data->mqtt_password));
 
 	data->mqtt_port        = prefs.getUShort("mqtt_port",    1883);
-	data->led_count        = prefs.getUShort("led_count",    1);
+	data->led_count        = prefs.getUShort("led_count",    128);
 	data->skip_leds        = prefs.getUShort("skip_leds",    0);
 	data->color_correction = prefs.getULong("color_corr",    0xFFFFFF);
 	data->brightness_min   = prefs.getUChar("bright_min",    10);

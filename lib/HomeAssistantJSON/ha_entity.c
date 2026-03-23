@@ -44,3 +44,13 @@ const char *ha_entity_config_topic(ha_entity_t *e) {
 	}
 	return e->config_topic;
 }
+
+const char *ha_entity_availability_topic(ha_entity_t *e) {
+	if (e->availability_topic == NULL) {
+		const char *ns = e->device->mqtt_namespace;
+		size_t len = strlen(ns) + sizeof("/availability");
+		e->availability_topic = (char *)malloc(len);
+		snprintf(e->availability_topic, len, "%s/availability", ns);
+	}
+	return e->availability_topic;
+}

@@ -55,6 +55,10 @@ bool ha_light_serialize_config(
 			cmd, strlen(cmd));
 	}
 
+	const char *avail = ha_entity_availability_topic(entity);
+	lwjson_serializer_add_string(&ser, LK("availability_topic"),
+		avail, strlen(avail));
+
 	lwjson_serializer_start_object(&ser, LK("device"));
 	lwjson_serializer_add_string(&ser, LK("name"),
 		entity->device->name, strlen(entity->device->name));

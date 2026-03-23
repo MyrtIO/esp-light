@@ -4,10 +4,10 @@
 #include <FastLED.h>
 #include "persistent_data.h"
 #include "light.h"
+#include "device_id.h"
 #include "wifi_sta.h"
 #include "mqtt.h"
 #include "ha_light.h"
-#include "ota.h"
 
 #define GPIO_BUTTON        0
 #define BUTTON_DEBOUNCE_MS 50
@@ -19,17 +19,13 @@ static light_config_t light_cfg;
 static app_wifi_config_t wifi_cfg;
 static mqtt_config_t mqtt_cfg;
 
-static const ota_config_t ota_cfg = {
-	.hostname = CONFIG_DEVICE_NAME,
-	.port     = CONFIG_OTA_PORT,
-};
-
 static bool btn_last_raw = HIGH;
 static bool btn_stable = HIGH;
 static unsigned long btn_changed_at = 0;
 
 void setup() {
 	Serial.begin(115200);
+	device_id_init();
 
 	pinMode(GPIO_BUTTON, INPUT_PULLUP);
 
@@ -43,11 +39,7 @@ void setup() {
 	light_cfg = {
 		.pin              = CONFIG_LIGHT_PIN_CTL,
 		.led_count        = pdata.led_count,
-#ifdef CONFIG_LIGHT_LED_SKIP
-		.led_skip         = CONFIG_LIGHT_LED_SKIP,
-#else
 		.led_skip         = pdata.skip_leds,
-#endif
 		.color_correction = pdata.color_correction,
 		.color_order      = pdata.color_order,
 		.kelvin_warm      = CONFIG_LIGHT_COLOR_KELVIN_WARM,
@@ -61,12 +53,12 @@ void setup() {
 	wifi_cfg = {
 		.ssid     = pdata.wifi_ssid,
 		.password = pdata.wifi_password,
-		.hostname = CONFIG_DEVICE_NAME,
+		.hostname = device_id(),
 		.reconnect_interval_ms = 15000,
 	};
 
 	mqtt_cfg = {
-		.client_id   = CONFIG_DEVICE_NAME,
+		.client_id   = device_id(),
 		.host        = pdata.mqtt_host,
 		.port        = pdata.mqtt_port,
 		.buffer_size = CONFIG_MQTT_BUFFER_SIZE,
@@ -84,7 +76,6 @@ void setup() {
 	wifi_init(&wifi_cfg);
 	mqtt_init(&mqtt_cfg);
 	ha_light_init();
-	ota_init(&ota_cfg);
 
 	Serial.println("[Main] initialized");
 }
@@ -93,7 +84,6 @@ void loop() {
 	wifi_loop();
 	mqtt_loop();
 	ha_light_loop();
-	ota_loop();
 
 	/* GPIO0 button → boot to factory */
 	unsigned long now = millis();

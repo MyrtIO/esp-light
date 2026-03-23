@@ -21,6 +21,9 @@ static uint8_t subscription_count = 0;
 static unsigned long last_connect_attempt = 0;
 static bool was_connected = false;
 
+static const char *lwt_topic = NULL;
+static const char *lwt_message = NULL;
+
 static void on_message(char *topic, byte *payload, unsigned int length) {
 	for (uint8_t i = 0; i < subscription_count; i++) {
 		if (strcmp(topic, subscriptions[i].topic) == 0) {
@@ -41,6 +44,11 @@ void mqtt_init(const mqtt_config_t *c) {
 	client.setServer(cfg->host, cfg->port);
 	client.setBufferSize(cfg->buffer_size);
 	client.setCallback(on_message);
+}
+
+void mqtt_set_lwt(const char *topic, const char *message) {
+	lwt_topic = topic;
+	lwt_message = message;
 }
 
 void mqtt_loop(void) {
@@ -65,7 +73,16 @@ void mqtt_loop(void) {
 	last_connect_attempt = now;
 
 	Serial.println("[MQTT] connecting...");
-	if (client.connect(cfg->client_id)) {
+	bool connected;
+	if (lwt_topic != NULL) {
+		connected = client.connect(
+			cfg->client_id,
+			lwt_topic, 0, true, lwt_message
+		);
+	} else {
+		connected = client.connect(cfg->client_id);
+	}
+	if (connected) {
 		Serial.println("[MQTT] connected");
 		resubscribe_all();
 	}
