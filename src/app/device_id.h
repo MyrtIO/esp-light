@@ -1,5 +1,0 @@
-#pragma once
-
-void device_id_init(void);
-const char *device_id(void);
-const char *device_name(void);

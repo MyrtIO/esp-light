@@ -1,0 +1,23 @@
+{
+  "name": "LightComposer",
+  "version": "1.4.0",
+  "description": "High-level rendering engine",
+  "keywords": "leds, effects",
+  "dependencies": {
+    "mishamyrt/attotime": "2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MyrtIO/light_composer.git"
+  },
+  "authors": [
+    {
+      "name": "Mikhael Khrustik",
+      "email": "misha@myrt.co",
+      "url": "https://myrt.co"
+    }
+  ],
+  "license": "MIT",
+  "frameworks": "Arduino",
+  "platforms": "*"
+}

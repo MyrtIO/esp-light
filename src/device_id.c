@@ -5,7 +5,7 @@
 static char id_buf[32];
 static char name_buf[48];
 
-void device_id_init(void) {
+void device_id_init() {
 	uint8_t mac[6];
 	esp_efuse_mac_get_default(mac);
 	snprintf(id_buf, sizeof(id_buf),
@@ -14,10 +14,10 @@ void device_id_init(void) {
 		"MyrtIO Светильник %02X%02X", mac[4], mac[5]);
 }
 
-const char *device_id(void) {
+const char *device_id() {
 	return id_buf;
 }
 
-const char *device_name(void) {
+const char *device_name() {
 	return name_buf;
 }

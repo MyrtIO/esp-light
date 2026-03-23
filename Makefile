@@ -50,6 +50,9 @@ flash: build
 flash-factory:
 	@pio run -t upload --upload-port $(BOARD_TTY) -e factory
 
+compiledb:
+	@pio run -t compiledb
+
 .PHONY: monitor
 monitor:
 	@pio device monitor --no-reconnect --port $(BOARD_TTY) --baud $(BAUD_RATE)
