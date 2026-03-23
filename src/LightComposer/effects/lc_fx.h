@@ -6,3 +6,4 @@
 #include "lc_fx_loading.h"
 #include "lc_fx_fire.h"
 #include "lc_fx_waves.h"
+#include "lc_fx_flow.h"

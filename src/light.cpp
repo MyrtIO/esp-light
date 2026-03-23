@@ -45,10 +45,14 @@ typedef struct {
 static light_effect_entry_t effect_table[] = {
 	{ "static",  &lc_fx_static  },
 	{ "rainbow", &lc_fx_rainbow },
-	{ "loading", &lc_fx_loading },
-	{ "fill",    &lc_fx_fill    },
-	{ "fire",    &lc_fx_fire    },
-	{ "waves",   &lc_fx_waves   },
+	{ "neon",    &lc_fx_flow_neon   },
+	{ "rest",    &lc_fx_flow_lava_lamp   },
+	{ "sunset",  &lc_fx_flow_sunset   },
+	// { "loading", &lc_fx_loading },
+	// { "fill",    &lc_fx_fill    },
+	// { "fire",    &lc_fx_fire    },
+	// { "waves",   &lc_fx_waves   },
+
 };
 
 #define EFFECT_COUNT (sizeof(effect_table) / sizeof(effect_table[0]))
