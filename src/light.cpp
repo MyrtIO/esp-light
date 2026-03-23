@@ -13,7 +13,7 @@
 
 /* --- HAL (FastLED) --- */
 
-static CRGB raw_leds[CONFIG_LIGHT_LED_COUNT];
+static CRGB raw_leds[LIGHT_MAX_LEDS];
 
 static void hal_set_pixel(uint16_t i, rgb_t c) {
 	raw_leds[i].r = c.r;
@@ -79,7 +79,7 @@ static const char *effect_name_of(const lc_effect_t *fx) {
 
 /* --- State --- */
 
-static rgb_t pixel_buf[CONFIG_LIGHT_LED_COUNT];
+static rgb_t pixel_buf[LIGHT_MAX_LEDS];
 
 static QueueHandle_t cmd_queue;
 static TaskHandle_t render_task_handle;
@@ -168,8 +168,9 @@ void light_init(const light_config_t *cfg) {
 	brightness_max = cfg->brightness_max;
 
 	FastLED.addLeds<CONFIG_LIGHT_CONTROLLER, CONFIG_LIGHT_PIN_CTL, GRB>(
-		raw_leds, CONFIG_LIGHT_LED_COUNT
+		raw_leds, LIGHT_MAX_LEDS
 	);
+	FastLED[0].setLeds(raw_leds, cfg->led_count);
 	FastLED.show();
 
 	atto_init(millis_u32);
@@ -181,7 +182,7 @@ void light_init(const light_config_t *cfg) {
 	lc_config_t lc_cfg = {
 		.hal             = &hal,
 		.pixel_buf       = pixel_buf,
-		.max_leds_count  = CONFIG_LIGHT_LED_COUNT,
+		.max_leds_count  = LIGHT_MAX_LEDS,
 		.leds_count      = cfg->led_count,
 		.led_skip        = cfg->led_skip,
 		.color_correction = LC_RGB_FROM_CODE(cfg->color_correction),
@@ -233,4 +234,15 @@ const char **light_effect_names(void) {
 
 uint8_t light_effect_count(void) {
 	return EFFECT_COUNT;
+}
+
+void light_update_config(const light_config_t *cfg) {
+	lc_set_leds_count(cfg->led_count);
+	lc_set_led_skip(cfg->led_skip);
+	lc_set_color_correction(LC_RGB_FROM_CODE(cfg->color_correction));
+	lc_set_color_order((lc_color_order_t)cfg->color_order);
+	FastLED[0].setLeds(raw_leds, cfg->led_count);
+
+	brightness_max = cfg->brightness_max;
+	lc_set_brightness(scale8_video(requested_brightness, brightness_max));
 }

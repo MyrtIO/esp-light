@@ -8,6 +8,7 @@
 .pio
 .supercode
 .cache
+src/factory/page.*
 
 # Secrets
 include/config.h

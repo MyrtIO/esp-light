@@ -17,8 +17,16 @@ build-app:
 	@pio run -e app
 
 .PHONY: build-factory
-build-factory:
+build-factory: factory-page
 	@pio run -e factory
+
+.PHONY: factory-page
+factory-page:
+	@cd src/factory/page; bun run build
+	@python3 scripts/bin2source.py \
+	    src/factory/page/dist/index.html.gz \
+		src/factory/page \
+		factory_page
 
 .PHONY: flash
 flash: build

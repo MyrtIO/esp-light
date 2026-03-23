@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define LIGHT_MAX_LEDS 300
+
 struct rgb_color_t {
 	uint8_t r, g, b;
 };
@@ -55,6 +57,7 @@ struct light_config_t {
 };
 
 void light_init(const light_config_t *cfg);
+void light_update_config(const light_config_t *cfg);
 void light_send_cmd(const light_cmd_t *cmd);
 light_state_t light_get_state(void);
 
