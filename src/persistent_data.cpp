@@ -60,6 +60,53 @@ bool persistent_data_is_configured(const persistent_data_t *data) {
 	return data->wifi_ssid[0] != '\0';
 }
 
+#define NVS_LIGHT_STATE "light_state"
+
+bool light_state_exists(void) {
+	Preferences prefs;
+	prefs.begin(NVS_LIGHT_STATE, true);
+	bool exists = prefs.isKey("brightness");
+	prefs.end();
+	return exists;
+}
+
+void light_state_load(light_saved_state_t *state) {
+	memset(state, 0, sizeof(light_saved_state_t));
+
+	Preferences prefs;
+	prefs.begin(NVS_LIGHT_STATE, true);
+
+	state->power       = prefs.getBool("power", true);
+	state->brightness  = prefs.getUChar("brightness", 200);
+	state->r           = prefs.getUChar("r", 255);
+	state->g           = prefs.getUChar("g", 255);
+	state->b           = prefs.getUChar("b", 255);
+	state->color_temp  = prefs.getUShort("color_temp", 0);
+	state->color_mode  = prefs.getUChar("color_mode", 0);
+
+	String fx = prefs.getString("effect", "static");
+	strncpy(state->effect, fx.c_str(), sizeof(state->effect) - 1);
+	state->effect[sizeof(state->effect) - 1] = '\0';
+
+	prefs.end();
+}
+
+void light_state_save(const light_saved_state_t *state) {
+	Preferences prefs;
+	prefs.begin(NVS_LIGHT_STATE, false);
+
+	prefs.putBool("power", state->power);
+	prefs.putUChar("brightness", state->brightness);
+	prefs.putUChar("r", state->r);
+	prefs.putUChar("g", state->g);
+	prefs.putUChar("b", state->b);
+	prefs.putUShort("color_temp", state->color_temp);
+	prefs.putUChar("color_mode", state->color_mode);
+	prefs.putString("effect", state->effect);
+
+	prefs.end();
+}
+
 void boot_to_factory(void) {
 	const esp_partition_t *p = esp_partition_find_first(
 		ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);

@@ -1,4 +1,5 @@
 #include "light.h"
+#include "persistent_data.h"
 
 #include <FastLED.h>
 #include <lc.h>
@@ -218,6 +219,34 @@ void light_init(const light_config_t *cfg) {
 
 void light_send_cmd(const light_cmd_t *cmd) {
 	xQueueSend(cmd_queue, cmd, 0);
+}
+
+void light_restore_state(const light_saved_state_t *state) {
+	light_cmd_t cmd;
+
+	cmd.type = LIGHT_CMD_BRIGHTNESS;
+	cmd.brightness = state->brightness;
+	light_send_cmd(&cmd);
+
+	if (state->color_mode == LIGHT_MODE_WHITE && state->color_temp > 0) {
+		cmd.type = LIGHT_CMD_COLOR_TEMP;
+		cmd.color_temp = state->color_temp;
+		light_send_cmd(&cmd);
+	} else {
+		cmd.type = LIGHT_CMD_COLOR;
+		cmd.color = { state->r, state->g, state->b };
+		light_send_cmd(&cmd);
+	}
+
+	if (state->effect[0] != '\0') {
+		cmd.type = LIGHT_CMD_EFFECT;
+		cmd.effect_name = state->effect;
+		light_send_cmd(&cmd);
+	}
+
+	cmd.type = LIGHT_CMD_POWER;
+	cmd.power = state->power;
+	light_send_cmd(&cmd);
 }
 
 light_state_t light_get_state(void) {

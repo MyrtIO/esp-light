@@ -56,7 +56,7 @@ static void build_light_config(void) {
 	light_cfg.kelvin_cold      = CONFIG_LIGHT_COLOR_KELVIN_COLD;
 	light_cfg.kelvin_initial   = CONFIG_LIGHT_COLOR_KELVIN_INITIAL;
 	light_cfg.transition_ms    = CONFIG_LIGHT_TRANSITION_COLOR;
-	light_cfg.brightness       = pdata.brightness_min;
+	light_cfg.brightness       = 200;
 	light_cfg.brightness_max   = pdata.brightness_max;
 }
 
@@ -231,6 +231,11 @@ void setup() {
 	persistent_data_load(&pdata);
 	build_light_config();
 	light_init(&light_cfg);
+
+	light_cmd_t cmd;
+	cmd.type = LIGHT_CMD_COLOR;
+	cmd.color = { 255, 255, 255 };
+	light_send_cmd(&cmd);
 
 	wifi_ap_start();
 

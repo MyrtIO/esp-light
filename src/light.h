@@ -56,8 +56,11 @@ struct light_config_t {
 	uint8_t brightness_max;
 };
 
+struct light_saved_state_t;
+
 void light_init(const light_config_t *cfg);
 void light_update_config(const light_config_t *cfg);
+void light_restore_state(const light_saved_state_t *state);
 void light_send_cmd(const light_cmd_t *cmd);
 light_state_t light_get_state(void);
 

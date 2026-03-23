@@ -1,16 +1,19 @@
 #include "ha_light.h"
 #include "light.h"
 #include "mqtt.h"
+#include "persistent_data.h"
 
 #include "ha_entity.h"
 #include "ha_light_entity.h"
 #include <Arduino.h>
 #include <config.h>
+#include <string.h>
 
 #define HA_BUFFER_SIZE        1024
 #define HA_STATE_INTERVAL     30000
 #define HA_CONFIG_INTERVAL    60000
 #define HA_STATE_DELAY_MS     100
+#define HA_SAVE_DELAY_MS      2000
 #define HA_STATUS_TOPIC       "homeassistant/status"
 #define HA_BIRTH_PAYLOAD      "online"
 
@@ -43,6 +46,8 @@ static unsigned long last_state_report = 0;
 static unsigned long last_config_report = 0;
 static bool state_publish_pending = false;
 static unsigned long state_publish_at = 0;
+static bool state_save_pending = false;
+static unsigned long state_save_at = 0;
 static bool was_connected = false;
 
 static void publish_state(void) {
@@ -68,6 +73,23 @@ static void publish_state(void) {
 static void publish_discovery(void) {
 	ha_light_serialize_config(&entity, &light_ha_config, buffer, sizeof(buffer));
 	mqtt_publish(ha_entity_config_topic(&entity), buffer, true);
+}
+
+static void save_light_state(void) {
+	light_state_t st = light_get_state();
+	light_saved_state_t saved;
+	saved.power = st.power;
+	saved.brightness = st.brightness;
+	saved.r = st.color.r;
+	saved.g = st.color.g;
+	saved.b = st.color.b;
+	saved.color_temp = st.color_temp;
+	saved.color_mode = (uint8_t)st.color_mode;
+	memset(saved.effect, 0, sizeof(saved.effect));
+	if (st.effect) {
+		strncpy(saved.effect, st.effect, sizeof(saved.effect) - 1);
+	}
+	light_state_save(&saved);
 }
 
 static void on_command(const uint8_t *payload, uint16_t length) {
@@ -108,6 +130,9 @@ static void on_command(const uint8_t *payload, uint16_t length) {
 
 	state_publish_pending = true;
 	state_publish_at = millis() + HA_STATE_DELAY_MS;
+
+	state_save_pending = true;
+	state_save_at = millis() + HA_SAVE_DELAY_MS;
 }
 
 static void on_ha_status(const uint8_t *payload, uint16_t length) {
@@ -144,6 +169,11 @@ void ha_light_loop(void) {
 	if (state_publish_pending && (long)(now - state_publish_at) >= 0) {
 		state_publish_pending = false;
 		publish_state();
+	}
+
+	if (state_save_pending && (long)(now - state_save_at) >= 0) {
+		state_save_pending = false;
+		save_light_state();
 	}
 
 	if (now - last_state_report >= HA_STATE_INTERVAL) {

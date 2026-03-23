@@ -11,6 +11,7 @@
 #define BUTTON_DEBOUNCE_MS 50
 
 static persistent_data_t pdata;
+static light_saved_state_t saved_state;
 
 static light_config_t light_cfg;
 static app_wifi_config_t wifi_cfg;
@@ -70,6 +71,10 @@ void setup() {
 	};
 
 	light_init(&light_cfg);
+	if (light_state_exists()) {
+		light_state_load(&saved_state);
+		light_restore_state(&saved_state);
+	}
 	wifi_init(&wifi_cfg);
 	mqtt_init(&mqtt_cfg);
 	ha_light_init();
