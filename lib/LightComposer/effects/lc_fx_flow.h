@@ -1,6 +1,6 @@
 #pragma once
 
-#include <LightComposer/lc_effect.h>
+#include <lc_effect.h>
 
 #ifdef __cplusplus
 extern "C" {

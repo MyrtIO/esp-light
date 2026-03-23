@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <config.h>
 #include "light.h"
-#include "app_wifi.h"
+#include "wifi_sta.h"
 #include "mqtt.h"
 #include "ha_light.h"
 #include "ota.h"

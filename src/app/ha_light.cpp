@@ -2,8 +2,8 @@
 #include "light.h"
 #include "mqtt.h"
 
-#include <HomeAssistantJSON/ha_entity.h>
-#include <HomeAssistantJSON/ha_light_entity.h>
+#include "ha_entity.h"
+#include "ha_light_entity.h"
 #include <Arduino.h>
 #include <config.h>
 

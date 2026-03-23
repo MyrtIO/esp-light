@@ -1,6 +1,6 @@
 #include "lc_fx_fire.h"
-#include <LightComposer/lc_pixels.h>
-#include <LightComposer/math/lc_scale.h>
+#include <lc_pixels.h>
+#include <math/lc_scale.h>
 #include <attotime.h>
 #include <stdlib.h>
 

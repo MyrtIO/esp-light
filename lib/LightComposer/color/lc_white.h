@@ -1,6 +1,6 @@
 #pragma once
 
-#include <LightComposer/lc_types.h>
+#include <lc_types.h>
 #include <stdint.h>
 
 #ifdef __cplusplus

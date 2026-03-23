@@ -1,5 +1,5 @@
 #include "mqtt.h"
-#include "app_wifi.h"
+#include "wifi_sta.h"
 #include <WiFiClient.h>
 #include <PubSubClient.h>
 #include <Arduino.h>

@@ -1,7 +1,7 @@
 #include "lc_fx_loading.h"
-#include <LightComposer/lc_pixels.h>
-#include <LightComposer/math/lc_scale.h>
-#include <LightComposer/lc_types.h>
+#include <lc_pixels.h>
+#include <math/lc_scale.h>
+#include <lc_types.h>
 #include <attotime.h>
 
 #define LOADING_CYCLE_MS   1000

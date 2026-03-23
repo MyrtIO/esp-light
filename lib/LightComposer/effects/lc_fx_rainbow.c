@@ -1,6 +1,6 @@
 #include "lc_fx_rainbow.h"
-#include <LightComposer/lc_pixels.h>
-#include <LightComposer/color/lc_gradient.h>
+#include <lc_pixels.h>
+#include <color/lc_gradient.h>
 #include <attotime.h>
 
 #define RAINBOW_CYCLE_MS 12000

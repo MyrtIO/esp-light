@@ -1,6 +1,6 @@
 #include "lc_fx_static.h"
-#include <LightComposer/lc_pixels.h>
-#include <LightComposer/color/lc_color.h>
+#include <lc_pixels.h>
+#include <color/lc_color.h>
 #include <attotime.h>
 
 typedef struct {

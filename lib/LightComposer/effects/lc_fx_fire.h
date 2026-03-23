@@ -1,6 +1,6 @@
 #pragma once
 
-#include <LightComposer/lc_effect.h>
+#include <lc_effect.h>
 
 #ifndef LC_MAX_LEDS
 #define LC_MAX_LEDS 300

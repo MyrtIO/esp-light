@@ -1,12 +1,12 @@
 #pragma once
 
-#include <LightComposer/lc_effect.h>
+#include <lc_effect.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-LC_EFFECT_DECLARE(loading);
+LC_EFFECT_DECLARE(fill);
 
 #ifdef __cplusplus
 }

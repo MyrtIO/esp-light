@@ -1,12 +1,12 @@
 #pragma once
 
-#include <LightComposer/lc_effect.h>
+#include <lc_types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-LC_EFFECT_DECLARE(waves);
+void lc_hsv2rgb(hsv_t hsv, rgb_t *out);
 
 #ifdef __cplusplus
 }

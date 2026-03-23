@@ -1,9 +1,9 @@
 #include "light.h"
 
 #include <FastLED.h>
-#include <LightComposer/lc.h>
-#include <LightComposer/effects/lc_fx.h>
-#include <LightComposer/color/lc_white.h>
+#include <lc.h>
+#include <effects/lc_fx.h>
+#include <color/lc_white.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>

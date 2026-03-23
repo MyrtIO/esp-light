@@ -1,5 +1,5 @@
 #include "lc_hsv2rgb.h"
-#include <LightComposer/math/lc_scale.h>
+#include <math/lc_scale.h>
 
 #define FORCE_REFERENCE(var) asm volatile("" : : "r"(var))
 
