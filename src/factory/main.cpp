@@ -4,6 +4,8 @@
 #include <ArduinoJson.h>
 #include <esp_ota_ops.h>
 #include <config.h>
+#include <lc.h>
+#include <FastLED.h>
 
 #include "persistent_data.h"
 #include "light.h"
@@ -231,6 +233,9 @@ void setup() {
 	persistent_data_load(&pdata);
 	build_light_config();
 	light_init(&light_cfg);
+	lc_set_brightness(scale8_video(200, light_cfg.brightness_max));
+	lc_set_power(true);
+	light_start();
 
 	light_cmd_t cmd;
 	cmd.type = LIGHT_CMD_COLOR;

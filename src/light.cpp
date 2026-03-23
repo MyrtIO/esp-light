@@ -200,12 +200,12 @@ void light_init(const light_config_t *cfg) {
 	lc_set_transition(cfg->transition_ms);
 	lc_set_effect_force(&lc_fx_static);
 	requested_brightness = cfg->brightness;
-	lc_set_brightness(scale8_video(cfg->brightness, brightness_max));
-	lc_set_power(true);
 	color_mode = LIGHT_MODE_WHITE;
 
 	cmd_queue = xQueueCreate(8, sizeof(light_cmd_t));
+}
 
+void light_start(void) {
 	xTaskCreatePinnedToCore(
 		render_task,
 		"light",
@@ -222,31 +222,28 @@ void light_send_cmd(const light_cmd_t *cmd) {
 }
 
 void light_restore_state(const light_saved_state_t *state) {
-	light_cmd_t cmd;
-
-	cmd.type = LIGHT_CMD_BRIGHTNESS;
-	cmd.brightness = state->brightness;
-	light_send_cmd(&cmd);
+	requested_brightness = state->brightness;
+	lc_set_brightness(scale8_video(state->brightness, brightness_max));
 
 	if (state->color_mode == LIGHT_MODE_WHITE && state->color_temp > 0) {
-		cmd.type = LIGHT_CMD_COLOR_TEMP;
-		cmd.color_temp = state->color_temp;
-		light_send_cmd(&cmd);
+		color_mode = LIGHT_MODE_WHITE;
+		white_kelvin = state->color_temp;
+		rgb_t white;
+		lc_kelvin_to_rgb(state->color_temp, &white);
+		lc_set_color(white);
 	} else {
-		cmd.type = LIGHT_CMD_COLOR;
-		cmd.color = { state->r, state->g, state->b };
-		light_send_cmd(&cmd);
+		color_mode = LIGHT_MODE_RGB;
+		lc_set_color((rgb_t){ state->r, state->g, state->b });
 	}
 
 	if (state->effect[0] != '\0') {
-		cmd.type = LIGHT_CMD_EFFECT;
-		cmd.effect_name = state->effect;
-		light_send_cmd(&cmd);
+		lc_effect_t *fx = find_effect(state->effect);
+		if (fx != NULL) {
+			lc_set_effect_force(fx);
+		}
 	}
 
-	cmd.type = LIGHT_CMD_POWER;
-	cmd.power = state->power;
-	light_send_cmd(&cmd);
+	lc_set_power(state->power);
 }
 
 light_state_t light_get_state(void) {

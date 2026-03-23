@@ -70,13 +70,13 @@ void lc_brightness_set_power(lc_brightness_t *br, bool enabled) {
         return;
     }
     br->enabled = enabled;
-    if (enabled) {
-        br->previous = 0;
-        br->target = br->selected;
-    } else {
-        br->previous = br->selected;
-        br->target = 0;
-    }
+	if (enabled) {
+		br->previous = br->current;
+		br->target = br->selected;
+	} else {
+		br->previous = br->current;
+		br->target = 0;
+	}
     br->reason = LC_BR_REASON_POWER;
     atto_progress_start(&br->transition, BRIGHTNESS_TRANSITION_MS);
 }

@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <config.h>
+#include <lc.h>
+#include <FastLED.h>
 #include "persistent_data.h"
 #include "light.h"
 #include "wifi_sta.h"
@@ -74,7 +76,11 @@ void setup() {
 	if (light_state_exists()) {
 		light_state_load(&saved_state);
 		light_restore_state(&saved_state);
+	} else {
+		lc_set_brightness(scale8_video(light_cfg.brightness, light_cfg.brightness_max));
+		lc_set_power(true);
 	}
+	light_start();
 	wifi_init(&wifi_cfg);
 	mqtt_init(&mqtt_cfg);
 	ha_light_init();
