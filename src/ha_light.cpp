@@ -11,6 +11,8 @@
 #define HA_STATE_INTERVAL     30000
 #define HA_CONFIG_INTERVAL    60000
 #define HA_STATE_DELAY_MS     100
+#define HA_STATUS_TOPIC       "homeassistant/status"
+#define HA_BIRTH_PAYLOAD      "online"
 
 static const ha_device_t ha_device = {
 	.name = CONFIG_DEVICE_NAME,
@@ -41,6 +43,7 @@ static unsigned long last_state_report = 0;
 static unsigned long last_config_report = 0;
 static bool state_publish_pending = false;
 static unsigned long state_publish_at = 0;
+static bool was_connected = false;
 
 static void publish_state(void) {
 	light_state_t st = light_get_state();
@@ -62,9 +65,9 @@ static void publish_state(void) {
 	mqtt_publish(ha_entity_state_topic(&entity), buffer, false);
 }
 
-static void publish_config(void) {
+static void publish_discovery(void) {
 	ha_light_serialize_config(&entity, &light_ha_config, buffer, sizeof(buffer));
-	mqtt_publish(ha_entity_config_topic(&entity), buffer, false);
+	mqtt_publish(ha_entity_config_topic(&entity), buffer, true);
 }
 
 static void on_command(const uint8_t *payload, uint16_t length) {
@@ -107,18 +110,36 @@ static void on_command(const uint8_t *payload, uint16_t length) {
 	state_publish_at = millis() + HA_STATE_DELAY_MS;
 }
 
+static void on_ha_status(const uint8_t *payload, uint16_t length) {
+	if (length != strlen(HA_BIRTH_PAYLOAD)) return;
+	if (memcmp(payload, HA_BIRTH_PAYLOAD, length) != 0) return;
+	publish_discovery();
+	publish_state();
+}
+
 void ha_light_init(void) {
 	light_ha_config.effects = light_effect_names();
 	light_ha_config.effect_count = light_effect_count();
 	mqtt_subscribe(ha_entity_command_topic(&entity), on_command);
+	mqtt_subscribe(HA_STATUS_TOPIC, on_ha_status);
 }
 
 void ha_light_loop(void) {
 	if (!mqtt_is_connected()) {
+		was_connected = false;
 		return;
 	}
 
 	unsigned long now = millis();
+
+	if (!was_connected) {
+		was_connected = true;
+		publish_discovery();
+		publish_state();
+		last_config_report = now;
+		last_state_report = now;
+		return;
+	}
 
 	if (state_publish_pending && (long)(now - state_publish_at) >= 0) {
 		state_publish_pending = false;
@@ -132,6 +153,6 @@ void ha_light_loop(void) {
 
 	if (now - last_config_report >= HA_CONFIG_INTERVAL) {
 		last_config_report = now;
-		publish_config();
+		publish_discovery();
 	}
 }
