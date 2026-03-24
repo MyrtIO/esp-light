@@ -1,6 +1,6 @@
-#include "lc_fx_rainbow.h"
+#include <lc_types.h>
 #include <lc_pixels.h>
-#include <color/lc_gradient.h>
+#include <lc_color.h>
 #include <attotime.h>
 
 #define RAINBOW_CYCLE_MS 12000
@@ -19,9 +19,9 @@ static bool rainbow_render(lc_state_t *s, void *raw) {
 
     c->hue_progress = atto_progress_get(&c->progress);
 
-    hsv_t c1 = { hue_shift(c, 0),   255, 255 };
-    hsv_t c2 = { hue_shift(c, 60),  255, 255 };
-    hsv_t c3 = { hue_shift(c, 120), 255, 255 };
+    hsv_t c1 = {hue_shift(c, 0), 255, 255};
+    hsv_t c2 = {hue_shift(c, 60), 255, 255};
+    hsv_t c3 = {hue_shift(c, 120), 255, 255};
 
     lc_fill_gradient3(s->pixels, s->center, c1, c2, c3, LC_GRADIENT_FORWARD);
     lc_mirror(s);

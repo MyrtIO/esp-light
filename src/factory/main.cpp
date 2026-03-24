@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <config.h>
-#include <lc.h>
+#include <light_composer.h>
 #include <FastLED.h>
 
 #include "persistent_data.h"

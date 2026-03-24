@@ -1,10 +1,10 @@
-#include "lc_fx_waves.h"
+#include <lc_types.h>
 #include <lc_pixels.h>
-#include <math/lc_scale.h>
+#include <lc_math.h>
 #include <lc_types.h>
 #include <attotime.h>
 
-#define WAVES_CYCLE_MS   1000
+#define WAVES_CYCLE_MS 1000
 #define WAVES_FILL_FRACT 200
 
 typedef struct {
@@ -17,7 +17,8 @@ typedef struct {
 static bool waves_render(lc_state_t *s, void *raw) {
     waves_ctx_t *c = (waves_ctx_t *)raw;
 
-    uint8_t shift = lc_scale8((uint8_t)c->max_offset, atto_progress_get(&c->progress));
+    uint8_t shift =
+        lc_scale8((uint8_t)c->max_offset, atto_progress_get(&c->progress));
 
     if (!LC_RGB_EQ(s->current_color, s->target_color)) {
         s->current_color = s->target_color;

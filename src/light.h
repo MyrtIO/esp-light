@@ -3,8 +3,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define LIGHT_MAX_LEDS 300
-
 struct rgb_color_t {
   uint8_t r, g, b;
 };

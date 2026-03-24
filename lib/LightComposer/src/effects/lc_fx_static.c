@@ -1,6 +1,6 @@
-#include "lc_fx_static.h"
+#include <lc_types.h>
 #include <lc_pixels.h>
-#include <color/lc_color.h>
+#include <lc_color.h>
 #include <attotime.h>
 
 typedef struct {
@@ -22,9 +22,8 @@ static bool static_render(lc_state_t *s, void *raw) {
         return true;
     }
 
-    s->current_color = lc_blend_rgb(
-        s->previous_color, s->target_color, atto_progress_get(&c->progress)
-    );
+    s->current_color = lc_blend_rgb(s->previous_color, s->target_color,
+                                    atto_progress_get(&c->progress));
     lc_fill(s, s->current_color);
 
     if (atto_progress_finished(&c->progress)) {

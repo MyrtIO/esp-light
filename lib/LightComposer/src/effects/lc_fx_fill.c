@@ -1,6 +1,6 @@
-#include "lc_fx_fill.h"
+#include <lc_types.h>
 #include <lc_pixels.h>
-#include <math/lc_scale.h>
+#include <lc_math.h>
 #include <lc_types.h>
 #include <attotime.h>
 

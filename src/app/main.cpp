@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <config.h>
-#include <lc.h>
-#include <FastLED.h>
+#include <light_composer.h>
 #include "persistent_data.h"
 #include "light.h"
 #include "device_id.h"
@@ -62,6 +61,8 @@ void setup() {
 		.host        = pdata.mqtt_host,
 		.port        = pdata.mqtt_port,
 		.buffer_size = CONFIG_MQTT_BUFFER_SIZE,
+		.username    = pdata.mqtt_username,
+		.password    = pdata.mqtt_password,
 	};
 
 	light_init(&light_cfg);
@@ -69,7 +70,7 @@ void setup() {
 		light_state_load(&saved_state);
 		light_restore_state(&saved_state);
 	} else {
-		lc_set_brightness(scale8_video(light_cfg.brightness, light_cfg.brightness_max));
+		lc_set_brightness(lc_scale8_video(light_cfg.brightness, light_cfg.brightness_max));
 		lc_set_power(true);
 	}
 	light_start();

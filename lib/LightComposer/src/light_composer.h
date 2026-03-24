@@ -1,27 +1,22 @@
 #pragma once
 
-#include "lc_types.h"
-#include "lc_hal.h"
-#include "lc_effect.h"
 #include "lc_pixels.h"
-#include "color/lc_color.h"
-#include "color/lc_hsv2rgb.h"
-#include "color/lc_white.h"
-#include "color/lc_gradient.h"
+#include "lc_types.h"
+#include "lc_color.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct {
-    const lc_hal_t  *hal;
-    rgb_t           *pixel_buf;
-    uint16_t         max_leds_count;
-    uint16_t         leds_count;
-    uint16_t         led_skip;
-    rgb_t            color_correction;
+    const lc_hal_t *hal;
+    rgb_t *pixel_buf;
+    uint16_t max_leds_count;
+    uint16_t leds_count;
+    uint16_t led_skip;
+    rgb_t color_correction;
     lc_color_order_t color_order;
-    uint8_t          fps;
+    uint8_t fps;
 } lc_config_t;
 
 /* Lifecycle */
@@ -29,13 +24,13 @@ void lc_init(const lc_config_t *cfg);
 void lc_tick(void);
 
 /* Brightness / power */
-void    lc_set_brightness(uint8_t brightness);
-void    lc_set_power(bool enabled);
+void lc_set_brightness(uint8_t brightness);
+void lc_set_power(bool enabled);
 uint8_t lc_get_brightness(void);
-bool    lc_get_power(void);
+bool lc_get_power(void);
 
 /* Color */
-void  lc_set_color(rgb_t color);
+void lc_set_color(rgb_t color);
 rgb_t lc_get_color(void);
 
 /* Effect */

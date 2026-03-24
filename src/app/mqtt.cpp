@@ -73,14 +73,17 @@ void mqtt_loop(void) {
 	last_connect_attempt = now;
 
 	Serial.println("[MQTT] connecting...");
+	const char *user = (cfg->username && cfg->username[0]) ? cfg->username : NULL;
+	const char *pass = (cfg->password && cfg->password[0]) ? cfg->password : NULL;
 	bool connected;
 	if (lwt_topic != NULL) {
 		connected = client.connect(
 			cfg->client_id,
+			user, pass,
 			lwt_topic, 0, true, lwt_message
 		);
 	} else {
-		connected = client.connect(cfg->client_id);
+		connected = client.connect(cfg->client_id, user, pass);
 	}
 	if (connected) {
 		Serial.println("[MQTT] connected");

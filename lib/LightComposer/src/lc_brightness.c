@@ -1,5 +1,5 @@
 #include "lc_brightness.h"
-#include "math/lc_blend.h"
+#include "lc_math.h"
 
 #define BRIGHTNESS_TRANSITION_MS 800
 
@@ -14,11 +14,16 @@ void lc_brightness_init(lc_brightness_t *br) {
     atto_progress_reset(&br->transition);
 }
 
-static uint8_t map_range(uint8_t x, uint8_t in_min, uint8_t in_max,
-                         uint8_t out_min, uint8_t out_max) {
-    if (in_max == in_min) return out_min;
+static uint8_t map_range(uint8_t x,
+                         uint8_t in_min,
+                         uint8_t in_max,
+                         uint8_t out_min,
+                         uint8_t out_max) {
+    if (in_max == in_min)
+        return out_min;
     return (uint8_t)(((uint16_t)(x - in_min) * (out_max - out_min)) /
-                     (in_max - in_min) + out_min);
+                         (in_max - in_min) +
+                     out_min);
 }
 
 bool lc_brightness_tick(lc_brightness_t *br, lc_effect_switch_fn on_switch) {
@@ -70,13 +75,13 @@ void lc_brightness_set_power(lc_brightness_t *br, bool enabled) {
         return;
     }
     br->enabled = enabled;
-	if (enabled) {
-		br->previous = br->current;
-		br->target = br->selected;
-	} else {
-		br->previous = br->current;
-		br->target = 0;
-	}
+    if (enabled) {
+        br->previous = br->current;
+        br->target = br->selected;
+    } else {
+        br->previous = br->current;
+        br->target = 0;
+    }
     br->reason = LC_BR_REASON_POWER;
     atto_progress_start(&br->transition, BRIGHTNESS_TRANSITION_MS);
 }

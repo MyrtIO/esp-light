@@ -10,6 +10,8 @@ struct mqtt_config_t {
 	const char *host;
 	uint16_t port;
 	uint16_t buffer_size;
+	const char *username;
+	const char *password;
 };
 
 void mqtt_init(const mqtt_config_t *cfg);
