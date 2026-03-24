@@ -9,6 +9,7 @@
 .supercode
 .cache
 src/factory/page.*
+.DS_Store
 
 # Secrets
 include/config.h
