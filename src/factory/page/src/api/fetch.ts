@@ -18,7 +18,7 @@ export class FetchApiService implements ApiService {
 
   async updateFirmware(
     file: File,
-    onProgress: ProgressCallback
+    onProgress: ProgressCallback,
   ): Promise<void> {
     return this.withLock(async () => {
       // Read file as ArrayBuffer to ensure raw binary is sent (not multipart)

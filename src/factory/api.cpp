@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <WebServer.h>
 #include <WiFi.h>
+#include <Update.h>
 #include <lwjson/lwjson.h>
 #include <lwjson/lwjson_serializer.h>
 #include <config.h>
@@ -317,6 +318,47 @@ static void handle_get_system(void) {
 	server.send(200, "application/json", json_buf);
 }
 
+static bool s_ota_ok = false;
+
+static void handle_ota_upload(void) {
+	HTTPUpload &upload = server.upload();
+
+	switch (upload.status) {
+	case UPLOAD_FILE_START:
+		s_ota_ok = false;
+		Serial.printf("[OTA] receiving %s\n", upload.filename.c_str());
+		if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+			Update.printError(Serial);
+		}
+		break;
+	case UPLOAD_FILE_WRITE:
+		if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+			Update.printError(Serial);
+		}
+		break;
+	case UPLOAD_FILE_END:
+		if (Update.end(true)) {
+			Serial.printf("[OTA] success, %u bytes\n", upload.totalSize);
+			s_ota_ok = true;
+		} else {
+			Update.printError(Serial);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+static void handle_ota_response(void) {
+	if (s_ota_ok) {
+		server.send(200, "application/json", "{\"ok\":true}");
+		delay(200);
+		boot_to_app();
+	} else {
+		server.send(500, "application/json", "{\"error\":\"ota failed\"}");
+	}
+}
+
 static void handle_post_boot(void) {
 	server.send(200, "application/json", "{\"ok\":true}");
 	delay(200);
@@ -336,6 +378,7 @@ void api_init(persistent_data_t *pdata, light_config_t *light_cfg) {
 	server.on("/api/configuration/light", HTTP_POST, handle_post_light_configuration);
 	server.on("/api/light/test",          HTTP_POST, handle_post_light_test);
 	server.on("/api/system",              HTTP_GET,  handle_get_system);
+	server.on("/api/ota",                 HTTP_POST, handle_ota_response, handle_ota_upload);
 	server.on("/api/boot",                HTTP_POST, handle_post_boot);
 }
 
