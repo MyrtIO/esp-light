@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <config.h>
 #include <light_composer.h>
+#include <button.h>
 #include "persistent_data.h"
 #include "light.h"
 #include "device_id.h"
@@ -8,8 +9,7 @@
 #include "mqtt.h"
 #include "ha_light.h"
 
-#define GPIO_BUTTON        0
-#define BUTTON_DEBOUNCE_MS 50
+#define GPIO_BUTTON 0
 
 static persistent_data_t pdata;
 static light_saved_state_t saved_state;
@@ -18,9 +18,7 @@ static light_config_t light_cfg;
 static app_wifi_config_t wifi_cfg;
 static mqtt_config_t mqtt_cfg;
 
-static bool btn_last_raw = HIGH;
-static bool btn_stable = HIGH;
-static unsigned long btn_changed_at = 0;
+static button_t btn = BUTTON_INIT(50);
 
 void setup() {
 	Serial.begin(115200);
@@ -86,18 +84,8 @@ void loop() {
 	mqtt_loop();
 	ha_light_loop();
 
-	/* GPIO0 button → boot to factory */
-	unsigned long now = millis();
-	bool btn_now = digitalRead(GPIO_BUTTON);
-	if (btn_now != btn_last_raw) {
-		btn_changed_at = now;
-		btn_last_raw = btn_now;
-	}
-	if ((now - btn_changed_at) > BUTTON_DEBOUNCE_MS && btn_now != btn_stable) {
-		btn_stable = btn_now;
-		if (btn_stable == LOW) {
-			Serial.println("[Main] button pressed, rebooting to factory...");
-			boot_to_factory();
-		}
+	if (button_pressed(&btn, digitalRead(GPIO_BUTTON))) {
+		Serial.println("[Main] button pressed, rebooting to factory...");
+		boot_to_factory();
 	}
 }

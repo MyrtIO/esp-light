@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <config.h>
 #include <light_composer.h>
+#include <button.h>
 #include <FastLED.h>
 
 #include "persistent_data.h"
@@ -13,17 +14,13 @@
 #define GPIO_BUTTON  0
 #define LED_BLINK_MS 200
 
-#define BUTTON_DEBOUNCE_MS 50
-
 static persistent_data_t pdata;
 static light_config_t light_cfg;
 
 static unsigned long last_blink = 0;
 static bool led_state = false;
 
-static bool btn_last_raw = HIGH;
-static bool btn_stable = HIGH;
-static unsigned long btn_changed_at = 0;
+static button_t btn = BUTTON_INIT(50);
 
 void setup() {
 	Serial.begin(115200);
@@ -62,16 +59,8 @@ void loop() {
 		digitalWrite(GPIO_LED, led_state);
 	}
 
-	bool btn_now = digitalRead(GPIO_BUTTON);
-	if (btn_now != btn_last_raw) {
-		btn_changed_at = now;
-		btn_last_raw = btn_now;
-	}
-	if ((now - btn_changed_at) > BUTTON_DEBOUNCE_MS && btn_now != btn_stable) {
-		btn_stable = btn_now;
-		if (btn_stable == LOW) {
-			Serial.println("[Factory] button pressed, booting app...");
-			boot_to_app();
-		}
+	if (button_pressed(&btn, digitalRead(GPIO_BUTTON))) {
+		Serial.println("[Factory] button pressed, booting app...");
+		boot_to_app();
 	}
 }

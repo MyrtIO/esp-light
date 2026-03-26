@@ -1,0 +1,10 @@
+{
+  "name": "Button",
+  "version": "1.0.0",
+  "description": "Debounced button press detection",
+  "dependencies": {
+    "mishamyrt/attotime": "2.0.0"
+  },
+  "frameworks": "Arduino",
+  "platforms": "*"
+}
