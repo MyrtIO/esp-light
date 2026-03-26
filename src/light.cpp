@@ -48,11 +48,12 @@ static light_effect_entry_t effect_table[] = {
 	{ "neon",    &lc_fx_flow_neon   },
 	{ "rest",    &lc_fx_flow_lava_lamp   },
 	{ "sunset",  &lc_fx_flow_sunset   },
-	// { "loading", &lc_fx_loading },
-	// { "fill",    &lc_fx_fill    },
-	// { "fire",    &lc_fx_fire    },
-	// { "waves",   &lc_fx_waves   },
-
+	{ "breathing", &lc_fx_breathing },
+	{ "aurora", &lc_fx_aurora },
+	{ "candle", &lc_fx_candlelight },
+	{ "tide", &lc_fx_tide },
+	{ "ocean", &lc_fx_ocean },
+	{ "ember", &lc_fx_ember },
 };
 
 #define EFFECT_COUNT (sizeof(effect_table) / sizeof(effect_table[0]))
