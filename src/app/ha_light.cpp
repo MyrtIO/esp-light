@@ -3,6 +3,7 @@
 #include "mqtt.h"
 #include "persistent_data.h"
 #include "device_id.h"
+#include <lc_color.h>
 
 #include "ha_entity.h"
 #include "ha_light_entity.h"
@@ -32,8 +33,8 @@ static ha_entity_t entity = {
 static ha_light_config_t light_ha_config = {
 	.effects = nullptr,
 	.effect_count = 0,
-	.min_kelvin = CONFIG_LIGHT_COLOR_KELVIN_WARM,
-	.max_kelvin = CONFIG_LIGHT_COLOR_KELVIN_COLD,
+	.min_kelvin = LC_KELVIN_MIN,
+	.max_kelvin = LC_KELVIN_MAX,
 };
 
 static char buffer[HA_BUFFER_SIZE];

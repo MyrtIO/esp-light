@@ -1,4 +1,0 @@
-wifi:
-  start_delay: 800
-mqtt:
-  buffer_size: 1024
