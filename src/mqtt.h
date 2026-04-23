@@ -6,15 +6,17 @@
 typedef void (*mqtt_handler_t)(const uint8_t *payload, uint16_t length);
 
 struct mqtt_config_t {
-	const char *client_id;
-	const char *host;
-	uint16_t port;
-	uint16_t buffer_size;
-	const char *username;
-	const char *password;
+    const char *client_id;
+    const char *host;
+    uint16_t port;
+    uint16_t buffer_size;
+    const char *username;
+    const char *password;
 };
 
 void mqtt_init(const mqtt_config_t *cfg);
+void mqtt_reconfigure(const mqtt_config_t *cfg);
+void mqtt_disconnect(void);
 void mqtt_set_lwt(const char *topic, const char *message);
 void mqtt_loop(void);
 void mqtt_subscribe(const char *topic, mqtt_handler_t handler);

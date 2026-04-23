@@ -1,8 +1,5 @@
 #include "persistent_data.h"
 #include <Preferences.h>
-#include <esp_ota_ops.h>
-#include <esp_partition.h>
-#include <Arduino.h>
 #include <string.h>
 
 #define NVS_NAMESPACE "config"
@@ -105,22 +102,4 @@ void light_state_save(const light_saved_state_t *state) {
 	prefs.putString("effect", state->effect);
 
 	prefs.end();
-}
-
-void boot_to_factory(void) {
-	const esp_partition_t *p = esp_partition_find_first(
-		ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
-	if (p) {
-		esp_ota_set_boot_partition(p);
-	}
-	esp_restart();
-}
-
-void boot_to_app(void) {
-	const esp_partition_t *p = esp_partition_find_first(
-		ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_0, NULL);
-	if (p) {
-		esp_ota_set_boot_partition(p);
-	}
-	esp_restart();
 }

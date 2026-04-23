@@ -1,5 +1,5 @@
 #include "mqtt.h"
-#include "wifi_sta.h"
+#include "wifi_manager.h"
 #include <WiFiClient.h>
 #include <PubSubClient.h>
 #include <Arduino.h>
@@ -24,6 +24,10 @@ static bool was_connected = false;
 static const char *lwt_topic = NULL;
 static const char *lwt_message = NULL;
 
+static bool mqtt_has_config(void) {
+	return cfg != NULL && cfg->host != NULL && cfg->host[0] != '\0';
+}
+
 static void on_message(char *topic, byte *payload, unsigned int length) {
 	for (uint8_t i = 0; i < subscription_count; i++) {
 		if (strcmp(topic, subscriptions[i].topic) == 0) {
@@ -46,13 +50,36 @@ void mqtt_init(const mqtt_config_t *c) {
 	client.setCallback(on_message);
 }
 
+void mqtt_reconfigure(const mqtt_config_t *c) {
+	cfg = c;
+	client.disconnect();
+	client.setServer(cfg->host, cfg->port);
+	client.setBufferSize(cfg->buffer_size);
+	was_connected = false;
+	last_connect_attempt = 0;
+}
+
+void mqtt_disconnect(void) {
+	client.disconnect();
+	was_connected = false;
+	last_connect_attempt = 0;
+}
+
 void mqtt_set_lwt(const char *topic, const char *message) {
 	lwt_topic = topic;
 	lwt_message = message;
 }
 
 void mqtt_loop(void) {
-	if (!wifi_is_connected()) {
+	if (!mqtt_has_config()) {
+		if (client.connected()) {
+			client.disconnect();
+		}
+		was_connected = false;
+		return;
+	}
+
+	if (!wifi_sta_is_connected()) {
 		was_connected = false;
 		return;
 	}

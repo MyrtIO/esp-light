@@ -4,7 +4,7 @@ import type {
   LightTestRequest,
   SystemInformation,
 } from "../models";
-import type { ApiService, ProgressCallback } from "./interface";
+import type { ApiService } from "./interface";
 
 export class MockApiService implements ApiService {
   async getConfiguration(): Promise<Configuration> {
@@ -57,28 +57,11 @@ export class MockApiService implements ApiService {
     await simulateNetworkDelay();
     return {
       build_version: "0d35914-2025-12-23T11:16:09+0000",
+      network_mode: "AP + STA",
+      sta_ip: "192.168.1.34",
+      ap_ip: "192.168.4.1",
       mac_address: [160, 183, 101, 22, 48, 84],
     };
-  }
-
-  async updateFirmware(
-    file: File,
-    onProgress: ProgressCallback
-  ): Promise<void> {
-    console.log(`[mock] updating firmware from ${file.name}`);
-    const totalTime = 10000;
-    const stepTime = totalTime / 10;
-    for (let i = 0; i <= 100; i += 10) {
-      await sleep(stepTime);
-      onProgress(i);
-    }
-    return;
-  }
-
-  async bootSystem(): Promise<void> {
-    console.log(`[mock] booting system`);
-    await simulateNetworkDelay();
-    return;
   }
 }
 

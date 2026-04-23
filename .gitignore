@@ -8,9 +8,5 @@
 .pio
 .supercode
 .cache
-src/factory/page.*
+src/provisioning_page.*
 .DS_Store
-
-# Secrets
-include/config.h
-config/secrets.yaml

@@ -1,14 +1,13 @@
-#include "api.h"
+#include "provisioning_web.h"
 #include <Arduino.h>
 #include <WebServer.h>
-#include <WiFi.h>
-#include <Update.h>
 #include <lwjson/lwjson.h>
 #include <lwjson/lwjson_serializer.h>
 #include <config.h>
 #include <string.h>
 
-#include "page.h"
+#include "wifi_manager.h"
+#include "provisioning_page.h"
 
 #define LK(s) (s), (sizeof(s) - 1)
 #define PARSE_TOKENS 32
@@ -17,6 +16,7 @@
 static WebServer server(80);
 static persistent_data_t *s_pdata;
 static light_config_t *s_light_cfg;
+static web_configuration_changed_cb_t s_on_configuration_changed;
 static char json_buf[JSON_BUF_SIZE];
 
 /* --- Color order helpers --- */
@@ -119,7 +119,7 @@ static void rebuild_config(void) {
 	s_light_cfg->kelvin_cold      = CONFIG_LIGHT_COLOR_KELVIN_COLD;
 	s_light_cfg->kelvin_initial   = CONFIG_LIGHT_COLOR_KELVIN_INITIAL;
 	s_light_cfg->transition_ms    = CONFIG_LIGHT_TRANSITION_COLOR;
-	s_light_cfg->brightness       = 200;
+	s_light_cfg->brightness       = s_pdata->brightness_min;
 	s_light_cfg->brightness_max   = s_pdata->brightness_max;
 }
 
@@ -127,7 +127,7 @@ static void rebuild_config(void) {
 
 static void handle_page(void) {
 	server.sendHeader("Content-Encoding", "gzip");
-	server.send_P(200, "text/html", (const char *)factory_page, factory_page_len);
+	server.send_P(200, "text/html", (const char *)provisioning_page, provisioning_page_len);
 }
 
 static void handle_get_configuration(void) {
@@ -227,6 +227,9 @@ static void handle_post_configuration(void) {
 	light_update_config(s_light_cfg);
 
 	server.send(204);
+	if (s_on_configuration_changed != NULL) {
+		s_on_configuration_changed();
+	}
 }
 
 static void handle_post_light_configuration(void) {
@@ -301,8 +304,17 @@ static void handle_get_system(void) {
 	const char *ver = __DATE__ " " __TIME__;
 	lwjson_serializer_add_string(&ser, LK("build_version"), ver, strlen(ver));
 
+	const char *network_mode = wifi_network_mode_string();
+	lwjson_serializer_add_string(&ser, LK("network_mode"), network_mode, strlen(network_mode));
+
+	String sta_ip = wifi_sta_ip().toString();
+	lwjson_serializer_add_string(&ser, LK("sta_ip"), sta_ip.c_str(), sta_ip.length());
+
+	String ap_ip = wifi_ap_ip().toString();
+	lwjson_serializer_add_string(&ser, LK("ap_ip"), ap_ip.c_str(), ap_ip.length());
+
 	uint8_t mac[6];
-	WiFi.macAddress(mac);
+	wifi_mac_address(mac);
 	lwjson_serializer_start_array(&ser, LK("mac_address"));
 	for (int i = 0; i < 6; i++) {
 		lwjson_serializer_add_uint(&ser, NULL, 0, mac[i]);
@@ -318,58 +330,16 @@ static void handle_get_system(void) {
 	server.send(200, "application/json", json_buf);
 }
 
-static bool s_ota_ok = false;
-
-static void handle_ota_upload(void) {
-	HTTPUpload &upload = server.upload();
-
-	switch (upload.status) {
-	case UPLOAD_FILE_START:
-		s_ota_ok = false;
-		Serial.printf("[OTA] receiving %s\n", upload.filename.c_str());
-		if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
-			Update.printError(Serial);
-		}
-		break;
-	case UPLOAD_FILE_WRITE:
-		if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
-			Update.printError(Serial);
-		}
-		break;
-	case UPLOAD_FILE_END:
-		if (Update.end(true)) {
-			Serial.printf("[OTA] success, %u bytes\n", upload.totalSize);
-			s_ota_ok = true;
-		} else {
-			Update.printError(Serial);
-		}
-		break;
-	default:
-		break;
-	}
-}
-
-static void handle_ota_response(void) {
-	if (s_ota_ok) {
-		server.send(200, "application/json", "{\"ok\":true}");
-		delay(200);
-		boot_to_app();
-	} else {
-		server.send(500, "application/json", "{\"error\":\"ota failed\"}");
-	}
-}
-
-static void handle_post_boot(void) {
-	server.send(200, "application/json", "{\"ok\":true}");
-	delay(200);
-	boot_to_app();
-}
-
 /* --- Public API --- */
 
-void api_init(persistent_data_t *pdata, light_config_t *light_cfg) {
+void web_init(
+	persistent_data_t *pdata,
+	light_config_t *light_cfg,
+	web_configuration_changed_cb_t on_configuration_changed
+) {
 	s_pdata = pdata;
 	s_light_cfg = light_cfg;
+	s_on_configuration_changed = on_configuration_changed;
 	rebuild_config();
 
 	server.on("/", HTTP_GET, handle_page);
@@ -378,14 +348,12 @@ void api_init(persistent_data_t *pdata, light_config_t *light_cfg) {
 	server.on("/api/configuration/light", HTTP_POST, handle_post_light_configuration);
 	server.on("/api/light/test",          HTTP_POST, handle_post_light_test);
 	server.on("/api/system",              HTTP_GET,  handle_get_system);
-	server.on("/api/ota",                 HTTP_POST, handle_ota_response, handle_ota_upload);
-	server.on("/api/boot",                HTTP_POST, handle_post_boot);
 }
 
-void api_start(void) {
+void web_start(void) {
 	server.begin();
 }
 
-void api_loop(void) {
+void web_loop(void) {
 	server.handleClient();
 }

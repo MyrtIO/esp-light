@@ -244,27 +244,6 @@ input[type="color"] {
   }
 }
 
-.progress-container {
-  width: 100%;
-  height: 4px;
-  background: var(--border-color);
-  border-radius: 2px;
-  margin-top: 8px;
-  overflow: hidden;
-  display: none;
-}
-
-.progress-bar {
-  height: 100%;
-  background: var(--accent-color);
-  width: 0%;
-  transition: width 0.2s;
-}
-
-#ota-file {
-  display: none;
-}
-
 .chevron {
   color: var(--text-secondary);
   opacity: 0.5;
@@ -304,29 +283,6 @@ input[type="color"] {
 
   .container {
     max-width: 100%;
-  }
-}
-
-.progress-bar {
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  bottom: 16px;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(
-    to right,
-    var(--accent-color) 0%,
-    var(--accent-color) var(--progress-bar-value, 0%),
-    var(--border-color) calc(var(--progress-bar-value, 0%) + 1%),
-    var(--border-color) 100%
-  );
-  transition: width 0.2s, opacity 0.2s;
-
-  &._visible {
-    opacity: 1;
   }
 }
 

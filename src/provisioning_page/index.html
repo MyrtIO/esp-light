@@ -17,7 +17,6 @@
         <header id="header">
             <div class="logo">MyrtIO <span>Светильник</span></div>
             <div class="loader _visible"></div>
-            <div class="progress-bar"></div>
             <button type="submit" id="button-save" class="btn _rounded _hidden" form="configForm">Сохранить</button>
         </header>
 
@@ -132,12 +131,12 @@
             <h2>Система</h2>
             <div class="card">
                 <div class="row">
-                    <div class="label">Номер сборки</div>
-                    <div class="value" id="build-version" style="color: var(--text-secondary)">b738590e</div>
+                    <div class="label">Время сборки</div>
+                    <div class="value" id="build-version" style="color: var(--text-secondary)">Apr 23 2026 21:30:00</div>
                 </div>
                 <div class="row">
-                    <div class="label">Дата сборки</div>
-                    <div class="value" id="build-date" style="color: var(--text-secondary)">21.12.2025 15:53</div>
+                    <div class="label">Сетевой режим</div>
+                    <div class="value" id="network-mode" style="color: var(--text-secondary)">AP</div>
                 </div>
                 <div class="row">
                     <div class="label">MAC-адрес</div>
@@ -145,22 +144,20 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="label">Обновление системы</div>
-                    <div class="value">
-                        <button type="button" id="button-ota" class="btn _danger">Загрузить файл...</button>
-                        <input type="file" id="ota-file" accept=".bin">
-                    </div>
+                    <div class="label">STA IP</div>
+                    <div class="value" id="sta-ip" style="color: var(--text-secondary)">нет подключения</div>
                 </div>
                 <div class="row">
-                    <div class="label"></div>
-                    <div class="value">
-                        <button type="button" id="button-boot" class="btn">Запустить систему</button>
+                    <div class="label">AP IP</div>
+                    <div class="value" id="ap-ip" style="color: var(--text-secondary)">192.168.4.1</div>
+                </div>
+                <div class="row">
+                    <div class="label">Подсказка</div>
+                    <div class="value" style="color: var(--text-secondary)">
+                        Удерживайте кнопку GPIO0 около 3 секунд, чтобы включить или выключить режим настройки.
                     </div>
                 </div>
             </div>
-            <!-- <div class="progress-container" id="progressContainer">
-                <div class="progress-bar" id="progressBar"></div>
-            </div> -->
         </section>
     </div>
     <script type="module" src="/src/main.ts"></script>

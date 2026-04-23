@@ -2,6 +2,9 @@ export type MacAddress = [number, number, number, number, number, number];
 
 export interface SystemInformation {
   build_version: string;
+  network_mode: string;
+  sta_ip: string;
+  ap_ip: string;
   mac_address: MacAddress;
 }
 

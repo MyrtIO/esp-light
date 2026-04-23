@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "factory-page",
+      "name": "web-page",
       "dependencies": {
         "vite-plugin-singlefile": "^2.3.0",
         "vitest": "^4.1.0",

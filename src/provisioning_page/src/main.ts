@@ -25,7 +25,7 @@ async function main() {
     ? new MockApiService()
     : new FetchApiService("/api");
 
-  const systemForm = new SystemBlock(systemSection, onFirmwareUpdate, onBoot);
+  const systemForm = new SystemBlock(systemSection);
   const headerBlock = new HeaderBlock(header, onConfigurationSave);
   const configurationForm = new ConfigurationBlock(configForm, {
     onDirty: () => headerBlock.showSaveButton(),
@@ -59,11 +59,6 @@ async function main() {
     testColor(255, 255, 255, testBrightness)
   );
 
-  async function onBoot() {
-    await api.bootSystem();
-    alert("Система запущена, устройство будет доступно в течение 10 секунд");
-  }
-
   async function onConfigurationSave(e: Event) {
     e.preventDefault();
     if (!configurationForm.validate()) return;
@@ -77,29 +72,6 @@ async function main() {
     }
     headerBlock.hideLoader();
     configurationForm.markClean();
-  }
-
-  async function onFirmwareUpdate(file: File) {
-    if (!confirm(`Обновить прошивку файлом ${file.name}?`)) {
-      systemForm.clearOtaFile();
-      return;
-    }
-    configurationForm.lock();
-    systemForm.lock();
-    headerBlock.showLoader();
-    headerBlock.hideSaveButton();
-    headerBlock.showProgressBar();
-    headerBlock.setProgress(0);
-    try {
-      await api.updateFirmware(file, (progress) =>
-        headerBlock.setProgress(progress)
-      );
-    } catch (error) {
-      console.error(error);
-    }
-    headerBlock.hideLoader();
-    headerBlock.hideProgressBar();
-    alert("Прошивка обновлена, устройство запустится в течение 30 секунд");
   }
 
   // Load initial state
