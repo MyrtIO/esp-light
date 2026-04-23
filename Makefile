@@ -3,52 +3,33 @@ BAUD_RATE = 115200
 
 ESPTOOL = pio pkg exec -- esptool.py
 
-MERGED_BIN     = .pio/build/esp_light.bin
-BOOTLOADER_BIN = .pio/build/factory/bootloader.bin
-PARTITIONS_BIN = .pio/build/factory/partitions.bin
+ESP32_MERGED_BIN     = .pio/build/esp_light.bin
 BOOT_APP_BIN   = $(HOME)/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin
-FACTORY_BIN    = .pio/build/factory/firmware.bin
-APP_BIN        = .pio/build/app/firmware.bin
 
-all: build
-
-.PHONY: build
-build: build-app build-factory
-	@$(ESPTOOL) --chip esp32 \
+define build_firmware
+	make factory-page
+	pio run -e $(1)-app
+	pio run -e $(1)-factory
+	$(ESPTOOL) --chip $(2) \
 		merge_bin \
-		--output $(MERGED_BIN) \
-		0x1000   $(BOOTLOADER_BIN) \
-		0x8000   $(PARTITIONS_BIN) \
+		--output .pio/build/$(1)-firmware.bin \
+		0x1000   .pio/build/$(1)-factory/bootloader.bin \
+		0x8000   .pio/build/$(1)-factory/partitions.bin \
 		0xD000   $(BOOT_APP_BIN) \
-		0x10000  $(FACTORY_BIN) \
-		0x110000 $(APP_BIN)
+		0x10000  .pio/build/$(1)-factory/firmware.bin \
+		0x110000 .pio/build/$(1)-app/firmware.bin
+endef
 
-.PHONY: build-app
-build-app:
-	@pio run -e app
-
-.PHONY: build-factory
-build-factory: factory-page
-	@pio run -e factory
-
-.PHONY: factory-page
-factory-page:
-	@cd src/factory/page; bun run build
-	@python3 scripts/bin2source.py \
-	    src/factory/page/dist/index.html.gz \
-		src/factory/page \
-		factory_page
-
-.PHONY: flash
-flash: build
-	@$(ESPTOOL) --chip esp32 --baud 460800 \
-		--before default_reset --after hard_reset \
-		write_flash -z --flash_mode dio --flash_freq 40m --flash_size 4MB \
-		0x0   $(MERGED_BIN)
-
-.PHONY: flash-factory
-flash-factory:
-	@pio run -t upload --upload-port $(BOARD_TTY) -e factory
+define flash_firmware
+	$(ESPTOOL) --chip $(2) --baud $(BAUD_RATE) \
+		--before default_reset \
+		--after hard_reset \
+		write_flash -z \
+		--flash_mode dio \
+		--flash_freq 40m \
+		--flash_size 4MB \
+		0x0 .pio/build/$(1)-firmware.bin
+endef
 
 compiledb:
 	@pio run -t compiledb
@@ -65,3 +46,26 @@ format:
 		-r 'lib/*.cc' \
 		-r 'lib/*.h' \
 		-r 'include/*.h'
+
+.PHONY: factory-page
+factory-page:
+	@cd src/factory/page; bun run build
+	@python3 scripts/bin2source.py \
+	    src/factory/page/dist/index.html.gz \
+		src/factory/page \
+		factory_page
+
+.PHONY: esp32dev-firmware
+esp32dev-firmware:
+	$(call build_firmware,esp32dev,esp32)
+
+esp32dev-flash: esp32dev-firmware
+	$(call flash_firmware,esp32dev,esp32)
+
+.PHONY: build-s2-mini
+s2-mini-firmware:
+	$(call build_firmware,s2-mini,esp32s2)
+
+.PHONY: flash-s2-mini
+s2-mini-flash: s2-mini-firmware
+	$(call flash_firmware,s2-mini,esp32s2)

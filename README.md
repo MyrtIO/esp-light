@@ -11,6 +11,8 @@ ESP32 firmware for a WS2812 light/strip with a built-in factory access point, we
 
 ### WS2812 Wiring
 
+#### esp32dev
+
 - `ESP32 GPIO25` -> `WS2812 DIN`
 - `ESP32 GND` -> `WS2812 GND`
 - External `5V` PSU -> `WS2812 5V`
@@ -18,6 +20,10 @@ ESP32 firmware for a WS2812 light/strip with a built-in factory access point, we
 - For stable operation, a level shifter and a `330-470 Ohm` series resistor on the data line are recommended
 
 Do not power longer LED strips from the ESP32 board directly.
+
+#### lolin s2 mini
+
+Same as `esp32dev`, but `WS2812 DIN` should be connected to `GPIO 18`.
 
 ## Prerequisites
 
@@ -30,24 +36,23 @@ Do not power longer LED strips from the ESP32 board directly.
 
 The default serial port is hardcoded in [`Makefile`](./Makefile). In most cases, override it from the command line:
 
+### esp32dev
+
 ```sh
-make build
-make BOARD_TTY=/dev/ttyUSB0 flash
-make BOARD_TTY=/dev/ttyUSB0 flash-factory
-make BOARD_TTY=/dev/ttyUSB0 monitor
+make esp32dev-firmware
+make BOARD_TTY=/dev/ttyUSB0 esp32dev-flash
 ```
 
-Useful targets:
+### lolin s2 mini
 
-- `make build` builds both firmware images and merges them into `.pio/build/esp_light.bin`
-- `make flash` builds and flashes the full image at `0x0`
-- `make flash-factory` flashes only the factory firmware
-- `make build-app` builds only the application firmware
-- `make build-factory` builds only the factory firmware and web UI
+```sh
+make s2-mini-firmware
+make BOARD_TTY=/dev/ttyUSB0 s2-mini-flash
+```
 
 ## First Setup
 
-1. Flash the device with `make flash`.
+1. Flash the device.
 2. On first boot, the device starts in factory mode if Wi-Fi is not configured.
 3. Connect to the AP named `MyrtIO Светильник XXYY`.
 4. Open `http://192.168.4.1/` or the IP printed in the serial log.
