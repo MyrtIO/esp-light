@@ -1,21 +1,20 @@
 #include "mqtt_ha.h"
-#include "light.h"
+
+#include <string.h>
 #include <cpubsub.h>
 #include <lc_color.h>
 #include <attotime.h>
-
-#include <persistent_data.h>
 #include <homeassistant_json.h>
-#include <config.h>
-#include <string.h>
+
+#include "config.h"
+#include "light.h"
+#include "persistent_data.h"
 
 #define HA_BUFFER_SIZE        1024
 #define HA_STATE_INTERVAL     30000
 #define HA_CONFIG_INTERVAL    60000
 #define HA_STATE_DELAY_MS     100
 #define HA_SAVE_DELAY_MS      2000
-#define HA_STATUS_TOPIC       "homeassistant/status"
-#define HA_BIRTH_PAYLOAD      "online"
 
 static ha_device_t ha_device;
 
@@ -63,12 +62,12 @@ static void publish_state(void) {
 		: HA_COLOR_MODE_TEMP;
 
 	ha_light_serialize_state(&ha_state, buffer, sizeof(buffer));
-	mqtt_publish(ha_entity_state_topic(&entity), buffer, false);
+	cpubsub_publish(ha_entity_state_topic(&entity), buffer, false);
 }
 
 static void publish_discovery(void) {
 	ha_light_serialize_config(&entity, &light_ha_config, buffer, sizeof(buffer));
-	mqtt_publish(ha_entity_config_topic(&entity), buffer, true);
+	cpubsub_publish(ha_entity_config_topic(&entity), buffer, true);
 }
 
 static void save_light_state(void) {
@@ -134,8 +133,8 @@ static void on_command(const uint8_t *payload, uint16_t length) {
 }
 
 static void on_ha_status(const uint8_t *payload, uint16_t length) {
-	if (length != strlen(HA_BIRTH_PAYLOAD)) return;
-	if (memcmp(payload, HA_BIRTH_PAYLOAD, length) != 0) return;
+	if (length != strlen(HA_AVAILABILITY_ONLINE)) return;
+	if (memcmp(payload, HA_AVAILABILITY_ONLINE, length) != 0) return;
 	publish_discovery();
 	publish_state();
 }
@@ -147,16 +146,16 @@ void mqtt_ha_init(void) {
 
 	light_ha_config.effects = light_effect_names();
 	light_ha_config.effect_count = light_effect_count();
-	mqtt_set_lwt(
+	cpubsub_set_lwt(
 		ha_entity_availability_topic(&entity),
 		HA_AVAILABILITY_OFFLINE
 	);
-	mqtt_subscribe(ha_entity_command_topic(&entity), on_command);
-	mqtt_subscribe(HA_STATUS_TOPIC, on_ha_status);
+	cpubsub_subscribe(ha_entity_command_topic(&entity), on_command);
+	cpubsub_subscribe(HA_STATUS_TOPIC, on_ha_status);
 }
 
 void mqtt_ha_loop(void) {
-	if (!mqtt_is_connected()) {
+	if (!cpubsub_is_connected()) {
 		was_connected = false;
 		return;
 	}
@@ -165,7 +164,7 @@ void mqtt_ha_loop(void) {
 
 	if (!was_connected) {
 		was_connected = true;
-		mqtt_publish(ha_entity_availability_topic(&entity), HA_AVAILABILITY_ONLINE, true);
+		cpubsub_publish(ha_entity_availability_topic(&entity), HA_AVAILABILITY_ONLINE, true);
 		publish_discovery();
 		publish_state();
 		last_config_report = now;

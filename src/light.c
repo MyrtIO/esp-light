@@ -128,8 +128,6 @@ static void update_state(void) {
 	portEXIT_CRITICAL(&state_mutex);
 }
 
-
-
 static void render_task(void *) {
 	for (;;) {
 		light_cmd_t cmd;

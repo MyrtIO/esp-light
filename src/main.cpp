@@ -5,8 +5,8 @@
 #include "config.h"
 #include "persistent_data.h"
 #include "light.h"
-#include "wifi_manager.h"
-#include "ota.h"
+#include "cwifi_manager.h"
+#include "carduino_ota.h"
 #include "mqtt_ha.h"
 #include "provisioning_web.h"
 
@@ -17,9 +17,9 @@ static persistent_data_t pdata;
 static light_saved_state_t saved_state;
 
 static light_config_t light_cfg;
-static wifi_runtime_config_t wifi_cfg;
-static mqtt_config_t mqtt_cfg;
-static ota_config_t ota_cfg;
+static cwifi_runtime_config_t wifi_cfg;
+static cpubsub_config_t mqtt_cfg;
+static carduino_ota_config_t ota_cfg;
 
 static button_t btn = BUTTON_INIT(50);
 
@@ -66,6 +66,13 @@ static void build_mqtt_config(void) {
 static void build_ota_config(void) {
 	ota_cfg = {
 		.hostname = device_hostname(),
+		.handlers = {
+			.on_start = NULL,
+			.on_progress = NULL,
+			.on_end = NULL,
+			.on_error = NULL,
+		},
+		.user_data = NULL,
 	};
 }
 
@@ -83,10 +90,10 @@ static void on_configuration_changed(void) {
 static void apply_runtime_config(void) {
 	rebuild_runtime_config();
 	light_update_config(&light_cfg);
-	wifi_reconfigure(&wifi_cfg);
-	wifi_set_provisioning(manual_provisioning);
-	mqtt_reconfigure(&mqtt_cfg);
-	ota_reconfigure(&ota_cfg);
+	cwifi_reconfigure(&wifi_cfg);
+	cwifi_set_provisioning(manual_provisioning);
+	cpubsub_reconfigure(&mqtt_cfg);
+	carduino_ota_reconfigure(&ota_cfg);
 
 	Serial.println("[Main] runtime configuration applied");
 }
@@ -110,7 +117,7 @@ static void toggle_provisioning(void) {
 	}
 
 	manual_provisioning = !manual_provisioning;
-	wifi_set_provisioning(manual_provisioning);
+	cwifi_set_provisioning(manual_provisioning);
 	Serial.printf(
 		"[Main] provisioning %s\n",
 		manual_provisioning ? "enabled" : "disabled"
@@ -144,9 +151,9 @@ void setup() {
 		set_default_light_state();
 	}
 
-	wifi_init(&wifi_cfg);
-	mqtt_init(&mqtt_cfg);
-	ota_init(&ota_cfg);
+	cwifi_init(&wifi_cfg);
+	cpubsub_init(&mqtt_cfg);
+	carduino_ota_init(&ota_cfg);
 	mqtt_ha_init();
 
 	web_init(&pdata, &light_cfg, on_configuration_changed);
@@ -163,9 +170,9 @@ void loop() {
 		apply_runtime_config();
 	}
 
-	wifi_loop();
-	mqtt_loop();
-	ota_loop();
+	cwifi_loop();
+	cpubsub_loop();
+	carduino_ota_loop();
 	mqtt_ha_loop();
 
 	if (button_held(&btn, digitalRead(GPIO_BUTTON), BUTTON_HOLD_MS)) {

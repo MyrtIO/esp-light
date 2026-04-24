@@ -1,7 +1,0 @@
-{
-    "name": "CPreferences",
-    "version": "1.0.0",
-    "description": "C wrapper for Arduino Preferences",
-    "frameworks": "Arduino",
-    "platforms": "*"
-}

@@ -1,7 +1,0 @@
-{
-    "name": "CWebServer",
-    "version": "1.0.0",
-    "description": "C wrapper for Arduino WebServer",
-    "frameworks": "Arduino",
-    "platforms": "*"
-}

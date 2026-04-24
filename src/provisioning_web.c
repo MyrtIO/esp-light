@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "config.h"
-#include "wifi_manager.h"
+#include "cwifi_manager.h"
 #include "provisioning_page/dist/page.h"
 
 #define LK(s) (s), (sizeof(s) - 1)
@@ -311,19 +311,19 @@ static void handle_get_system(void *user_data) {
 	const char *ver = __DATE__ " " __TIME__;
 	lwjson_serializer_add_string(&ser, LK("build_version"), ver, strlen(ver));
 
-	const char *network_mode = wifi_network_mode_string();
+	const char *network_mode = cwifi_network_mode_string();
 	lwjson_serializer_add_string(&ser, LK("network_mode"), network_mode, strlen(network_mode));
 
 	char sta_ip[IP_BUF_SIZE];
-	size_t sta_ip_len = wifi_sta_ip_string(sta_ip, sizeof(sta_ip));
+	size_t sta_ip_len = cwifi_sta_ip_string(sta_ip, sizeof(sta_ip));
 	lwjson_serializer_add_string(&ser, LK("sta_ip"), sta_ip, sta_ip_len);
 
 	char ap_ip[IP_BUF_SIZE];
-	size_t ap_ip_len = wifi_ap_ip_string(ap_ip, sizeof(ap_ip));
+	size_t ap_ip_len = cwifi_ap_ip_string(ap_ip, sizeof(ap_ip));
 	lwjson_serializer_add_string(&ser, LK("ap_ip"), ap_ip, ap_ip_len);
 
 	uint8_t mac[6];
-	wifi_mac_address(mac);
+	cwifi_mac_address(mac);
 	lwjson_serializer_start_array(&ser, LK("mac_address"));
 	for (int i = 0; i < 6; i++) {
 		lwjson_serializer_add_uint(&ser, NULL, 0, mac[i]);

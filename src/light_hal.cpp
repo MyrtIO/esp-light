@@ -18,7 +18,7 @@ void light_hal_show(void) {
 }
 
 void light_hal_init(void) {
-    FastLED.addLeds<CONFIG_LIGHT_CONTROLLER, CONFIG_LIGHT_PIN_CTL, GRB>(
+    FastLED.addLeds<CONFIG_LIGHT_CONTROLLER, CONFIG_LIGHT_PIN_CTL, RGB>(
 		raw_leds, CONFIG_LIGHT_LED_MAX_COUNT
 	);
 	FastLED.show();
