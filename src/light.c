@@ -1,38 +1,20 @@
 #include "light.h"
-#include "persistent_data.h"
 
-#include <FastLED.h>
-#include <light_composer.h>
-#include <lc_effects.h>
+#include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
+#include <light_composer.h>
 #include <attotime.h>
-#include <config.h>
-#include <string.h>
 
-/* --- HAL (FastLED) --- */
-
-static CRGB raw_leds[CONFIG_LIGHT_LED_MAX_COUNT];
-
-static void hal_set_pixel(uint16_t i, rgb_t c) {
-	raw_leds[i].r = c.r;
-	raw_leds[i].g = c.g;
-	raw_leds[i].b = c.b;
-}
-
-static rgb_t hal_get_pixel(uint16_t i) {
-	return (rgb_t){ raw_leds[i].r, raw_leds[i].g, raw_leds[i].b };
-}
-
-static void hal_show(void) {
-	FastLED.show();
-}
+#include "light_hal.h"
+#include "persistent_data.h"
+#include "config.h"
 
 static const lc_hal_t hal = {
-	.set_pixel = hal_set_pixel,
-	.get_pixel = hal_get_pixel,
-	.show      = hal_show,
+	.set_pixel = light_hal_set_pixel,
+	.get_pixel = light_hal_get_pixel,
+	.show      = light_hal_show,
 };
 
 /* --- Effect name table --- */
@@ -103,7 +85,7 @@ static void apply_cmd(const light_cmd_t *cmd) {
 		break;
 	case LIGHT_CMD_BRIGHTNESS: {
 		requested_brightness = cmd->brightness;
-		lc_set_brightness(scale8_video(cmd->brightness, brightness_max));
+		lc_set_brightness(lc_scale8_video(cmd->brightness, brightness_max));
 		break;
 	}
 	case LIGHT_CMD_COLOR:
@@ -139,16 +121,14 @@ static void update_state(void) {
 	portENTER_CRITICAL(&state_mutex);
 	current_state.power      = lc_get_power();
 	current_state.brightness = requested_brightness;
-	current_state.color      = { color.r, color.g, color.b };
+	current_state.color      = color;
 	current_state.color_temp = white_kelvin;
 	current_state.effect     = effect_name_of(lc_get_target_effect());
 	current_state.color_mode = color_mode;
 	portEXIT_CRITICAL(&state_mutex);
 }
 
-static uint32_t millis_u32(void) {
-	return (uint32_t)millis();
-}
+
 
 static void render_task(void *) {
 	for (;;) {
@@ -164,16 +144,11 @@ static void render_task(void *) {
 
 /* --- Public API --- */
 
-void light_init(const light_config_t *cfg) {
+void light_init(light_config_t *cfg) {
 	light_cfg = cfg;
 	brightness_max = cfg->brightness_max;
 
-	FastLED.addLeds<CONFIG_LIGHT_CONTROLLER, CONFIG_LIGHT_PIN_CTL, GRB>(
-		raw_leds, CONFIG_LIGHT_LED_MAX_COUNT
-	);
-	FastLED.show();
-
-	atto_init(millis_u32);
+	light_hal_init();
 
 	for (size_t i = 0; i < EFFECT_COUNT; i++) {
 		effect_names[i] = effect_table[i].name;
@@ -216,13 +191,13 @@ void light_start(void) {
 	);
 }
 
-void light_send_cmd(const light_cmd_t *cmd) {
+void light_send_cmd(light_cmd_t *cmd) {
 	xQueueSend(cmd_queue, cmd, 0);
 }
 
-void light_restore_state(const light_saved_state_t *state) {
+void light_restore_state(light_saved_state_t *state) {
 	requested_brightness = state->brightness;
-	lc_set_brightness(scale8_video(state->brightness, brightness_max));
+	lc_set_brightness(lc_scale8_video(state->brightness, brightness_max));
 
 	if (state->color_mode == LIGHT_MODE_WHITE && state->color_temp > 0) {
 		color_mode = LIGHT_MODE_WHITE;
@@ -261,12 +236,12 @@ uint8_t light_effect_count(void) {
 	return EFFECT_COUNT;
 }
 
-void light_update_config(const light_config_t *cfg) {
+void light_update_config(light_config_t *cfg) {
 	lc_set_leds_count(cfg->led_count);
 	lc_set_led_skip(cfg->led_skip);
 	lc_set_color_correction(LC_RGB_FROM_CODE(cfg->color_correction));
 	lc_set_color_order((lc_color_order_t)cfg->color_order);
 
 	brightness_max = cfg->brightness_max;
-	lc_set_brightness(scale8_video(requested_brightness, brightness_max));
+	lc_set_brightness(lc_scale8_video(requested_brightness, brightness_max));
 }

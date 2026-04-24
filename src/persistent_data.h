@@ -1,9 +1,13 @@
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-struct persistent_data_t {
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct persistent_data_t {
     char wifi_ssid[33];
     char wifi_password[65];
     char mqtt_host[65];
@@ -16,16 +20,16 @@ struct persistent_data_t {
     uint8_t brightness_min;
     uint8_t brightness_max;
     uint8_t color_order;
-};
+} persistent_data_t;
 
-struct light_saved_state_t {
+typedef struct light_saved_state_t {
     bool power;
     uint8_t brightness;
     uint8_t r, g, b;
     uint16_t color_temp;
     uint8_t color_mode;
     char effect[16];
-};
+} light_saved_state_t;
 
 void persistent_data_load(persistent_data_t *data);
 void persistent_data_save(const persistent_data_t *data);
@@ -34,3 +38,7 @@ bool persistent_data_is_configured(const persistent_data_t *data);
 bool light_state_exists(void);
 void light_state_load(light_saved_state_t *state);
 void light_state_save(const light_saved_state_t *state);
+
+#ifdef __cplusplus
+}
+#endif

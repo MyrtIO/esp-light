@@ -1,19 +1,18 @@
 #include "provisioning_web.h"
-#include <Arduino.h>
-#include <WebServer.h>
+#include <cwebserver.h>
 #include <lwjson/lwjson.h>
 #include <lwjson/lwjson_serializer.h>
-#include <config.h>
 #include <string.h>
 
+#include "config.h"
 #include "wifi_manager.h"
-#include "provisioning_page.h"
+#include "provisioning_page/dist/page.h"
 
 #define LK(s) (s), (sizeof(s) - 1)
 #define PARSE_TOKENS 32
 #define JSON_BUF_SIZE 768
+#define IP_BUF_SIZE 16
 
-static WebServer server(80);
 static persistent_data_t *s_pdata;
 static light_config_t *s_light_cfg;
 static web_configuration_changed_cb_t s_on_configuration_changed;
@@ -125,15 +124,17 @@ static void rebuild_config(void) {
 
 /* --- API handlers --- */
 
-static void handle_page(void) {
-	server.sendHeader("Content-Encoding", "gzip");
-	server.send_P(200, "text/html", (const char *)provisioning_page, provisioning_page_len);
+static void handle_page(void *user_data) {
+	(void)user_data;
+	cwebserver_send_header("Content-Encoding", "gzip", false);
+	cwebserver_send_progmem(200, "text/html", provisioning_page, provisioning_page_len);
 }
 
-static void handle_get_configuration(void) {
+static void handle_get_configuration(void *user_data) {
+	(void)user_data;
 	lwjson_serializer_t ser;
 	if (lwjson_serializer_init(&ser, json_buf, sizeof(json_buf) - 1) != lwjsonOK) {
-		server.send(500, "application/json", "{\"error\":\"serializer\"}");
+		cwebserver_send(500, "application/json", "{\"error\":\"serializer\"}");
 		return;
 	}
 
@@ -169,21 +170,22 @@ static void handle_get_configuration(void) {
 	lwjson_serializer_end_object(&ser);
 
 	if (!ser_finalize(&ser)) {
-		server.send(500, "application/json", "{\"error\":\"serializer\"}");
+		cwebserver_send(500, "application/json", "{\"error\":\"serializer\"}");
 		return;
 	}
-	server.send(200, "application/json", json_buf);
+	cwebserver_send(200, "application/json", json_buf);
 }
 
-static void handle_post_configuration(void) {
-	String body = server.arg("plain");
+static void handle_post_configuration(void *user_data) {
+	(void)user_data;
+	size_t body_len = cwebserver_body(json_buf, sizeof(json_buf));
 
 	lwjson_token_t tokens[PARSE_TOKENS];
 	lwjson_t parser;
 	lwjson_init(&parser, tokens, LWJSON_ARRAYSIZE(tokens));
 
-	if (lwjson_parse_ex(&parser, body.c_str(), body.length()) != lwjsonOK) {
-		server.send(400, "application/json", "{\"error\":\"invalid json\"}");
+	if (lwjson_parse_ex(&parser, json_buf, body_len) != lwjsonOK) {
+		cwebserver_send(400, "application/json", "{\"error\":\"invalid json\"}");
 		return;
 	}
 
@@ -226,21 +228,22 @@ static void handle_post_configuration(void) {
 	rebuild_config();
 	light_update_config(s_light_cfg);
 
-	server.send(204);
+	cwebserver_send(204, "text/plain", "");
 	if (s_on_configuration_changed != NULL) {
 		s_on_configuration_changed();
 	}
 }
 
-static void handle_post_light_configuration(void) {
-	String body = server.arg("plain");
+static void handle_post_light_configuration(void *user_data) {
+	(void)user_data;
+	size_t body_len = cwebserver_body(json_buf, sizeof(json_buf));
 
 	lwjson_token_t tokens[PARSE_TOKENS];
 	lwjson_t parser;
 	lwjson_init(&parser, tokens, LWJSON_ARRAYSIZE(tokens));
 
-	if (lwjson_parse_ex(&parser, body.c_str(), body.length()) != lwjsonOK) {
-		server.send(400, "application/json", "{\"error\":\"invalid json\"}");
+	if (lwjson_parse_ex(&parser, json_buf, body_len) != lwjsonOK) {
+		cwebserver_send(400, "application/json", "{\"error\":\"invalid json\"}");
 		return;
 	}
 
@@ -250,24 +253,27 @@ static void handle_post_light_configuration(void) {
 	rebuild_config();
 	light_update_config(s_light_cfg);
 
-	server.send(204);
+	cwebserver_send(204, "text/plain", "");
 }
 
-static void handle_post_light_test(void) {
-	String body = server.arg("plain");
+static void handle_post_light_test(void *user_data) {
+	(void)user_data;
+	size_t body_len = cwebserver_body(json_buf, sizeof(json_buf));
 
 	lwjson_token_t tokens[PARSE_TOKENS];
 	lwjson_t parser;
 	lwjson_init(&parser, tokens, LWJSON_ARRAYSIZE(tokens));
 
-	if (lwjson_parse_ex(&parser, body.c_str(), body.length()) != lwjsonOK) {
-		server.send(400, "application/json", "{\"error\":\"invalid json\"}");
+	if (lwjson_parse_ex(&parser, json_buf, body_len) != lwjsonOK) {
+		cwebserver_send(400, "application/json", "{\"error\":\"invalid json\"}");
 		return;
 	}
 
 	light_cmd_t cmd;
 	cmd.type = LIGHT_CMD_COLOR;
-	cmd.color = { 0, 0, 0 };
+	cmd.color.r = 0;
+	cmd.color.g = 0;
+	cmd.color.b = 0;
 
 	const lwjson_token_t *t;
 	t = lwjson_find(&parser, "r");
@@ -289,13 +295,14 @@ static void handle_post_light_test(void) {
 	light_send_cmd(&cmd);
 
 	lwjson_free(&parser);
-	server.send(204);
+	cwebserver_send(204, "text/plain", "");
 }
 
-static void handle_get_system(void) {
+static void handle_get_system(void *user_data) {
+	(void)user_data;
 	lwjson_serializer_t ser;
 	if (lwjson_serializer_init(&ser, json_buf, sizeof(json_buf) - 1) != lwjsonOK) {
-		server.send(500, "application/json", "{\"error\":\"serializer\"}");
+		cwebserver_send(500, "application/json", "{\"error\":\"serializer\"}");
 		return;
 	}
 
@@ -307,11 +314,13 @@ static void handle_get_system(void) {
 	const char *network_mode = wifi_network_mode_string();
 	lwjson_serializer_add_string(&ser, LK("network_mode"), network_mode, strlen(network_mode));
 
-	String sta_ip = wifi_sta_ip().toString();
-	lwjson_serializer_add_string(&ser, LK("sta_ip"), sta_ip.c_str(), sta_ip.length());
+	char sta_ip[IP_BUF_SIZE];
+	size_t sta_ip_len = wifi_sta_ip_string(sta_ip, sizeof(sta_ip));
+	lwjson_serializer_add_string(&ser, LK("sta_ip"), sta_ip, sta_ip_len);
 
-	String ap_ip = wifi_ap_ip().toString();
-	lwjson_serializer_add_string(&ser, LK("ap_ip"), ap_ip.c_str(), ap_ip.length());
+	char ap_ip[IP_BUF_SIZE];
+	size_t ap_ip_len = wifi_ap_ip_string(ap_ip, sizeof(ap_ip));
+	lwjson_serializer_add_string(&ser, LK("ap_ip"), ap_ip, ap_ip_len);
 
 	uint8_t mac[6];
 	wifi_mac_address(mac);
@@ -324,10 +333,10 @@ static void handle_get_system(void) {
 	lwjson_serializer_end_object(&ser);
 
 	if (!ser_finalize(&ser)) {
-		server.send(500, "application/json", "{\"error\":\"serializer\"}");
+		cwebserver_send(500, "application/json", "{\"error\":\"serializer\"}");
 		return;
 	}
-	server.send(200, "application/json", json_buf);
+	cwebserver_send(200, "application/json", json_buf);
 }
 
 /* --- Public API --- */
@@ -337,23 +346,24 @@ void web_init(
 	light_config_t *light_cfg,
 	web_configuration_changed_cb_t on_configuration_changed
 ) {
+	cwebserver_init(80);
 	s_pdata = pdata;
 	s_light_cfg = light_cfg;
 	s_on_configuration_changed = on_configuration_changed;
 	rebuild_config();
 
-	server.on("/", HTTP_GET, handle_page);
-	server.on("/api/configuration",       HTTP_GET,  handle_get_configuration);
-	server.on("/api/configuration",       HTTP_POST, handle_post_configuration);
-	server.on("/api/configuration/light", HTTP_POST, handle_post_light_configuration);
-	server.on("/api/light/test",          HTTP_POST, handle_post_light_test);
-	server.on("/api/system",              HTTP_GET,  handle_get_system);
+	cwebserver_on("/", WEB_METHOD_GET, handle_page, NULL);
+	cwebserver_on("/api/configuration", WEB_METHOD_GET, handle_get_configuration, NULL);
+	cwebserver_on("/api/configuration", WEB_METHOD_POST, handle_post_configuration, NULL);
+	cwebserver_on("/api/configuration/light", WEB_METHOD_POST, handle_post_light_configuration, NULL);
+	cwebserver_on("/api/light/test", WEB_METHOD_POST, handle_post_light_test, NULL);
+	cwebserver_on("/api/system", WEB_METHOD_GET, handle_get_system, NULL);
 }
 
 void web_start(void) {
-	server.begin();
+	cwebserver_start();
 }
 
 void web_loop(void) {
-	server.handleClient();
+	cwebserver_loop();
 }

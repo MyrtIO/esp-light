@@ -1,14 +1,13 @@
 #include <Arduino.h>
 #include <button.h>
-#include <config.h>
+#include <cpubsub.h>
 
+#include "config.h"
 #include "persistent_data.h"
 #include "light.h"
-#include "device_id.h"
 #include "wifi_manager.h"
-#include "mqtt.h"
 #include "ota.h"
-#include "ha_light.h"
+#include "mqtt_ha.h"
 #include "provisioning_web.h"
 
 #define GPIO_BUTTON 0
@@ -118,6 +117,10 @@ static void toggle_provisioning(void) {
 	);
 }
 
+static uint32_t now_u32(void) {
+	return (uint32_t)millis();
+}
+
 void setup() {
 	Serial.begin(115200);
 	device_id_init();
@@ -127,6 +130,8 @@ void setup() {
 	persistent_data_load(&pdata);
 	rebuild_runtime_config();
 	bool has_saved_light_state = light_state_exists();
+
+	atto_init(now_u32);
 
 	light_init(&light_cfg);
 	if (has_saved_light_state) {
@@ -142,7 +147,7 @@ void setup() {
 	wifi_init(&wifi_cfg);
 	mqtt_init(&mqtt_cfg);
 	ota_init(&ota_cfg);
-	ha_light_init();
+	mqtt_ha_init();
 
 	web_init(&pdata, &light_cfg, on_configuration_changed);
 	web_start();
@@ -161,7 +166,7 @@ void loop() {
 	wifi_loop();
 	mqtt_loop();
 	ota_loop();
-	ha_light_loop();
+	mqtt_ha_loop();
 
 	if (button_held(&btn, digitalRead(GPIO_BUTTON), BUTTON_HOLD_MS)) {
 		toggle_provisioning();

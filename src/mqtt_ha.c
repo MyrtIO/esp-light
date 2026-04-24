@@ -1,13 +1,11 @@
-#include "ha_light.h"
+#include "mqtt_ha.h"
 #include "light.h"
-#include "mqtt.h"
-#include "persistent_data.h"
-#include "device_id.h"
+#include <cpubsub.h>
 #include <lc_color.h>
+#include <attotime.h>
 
-#include "ha_entity.h"
-#include "ha_light_entity.h"
-#include <Arduino.h>
+#include <persistent_data.h>
+#include <homeassistant_json.h>
 #include <config.h>
 #include <string.h>
 
@@ -31,7 +29,7 @@ static ha_entity_t entity = {
 };
 
 static ha_light_config_t light_ha_config = {
-	.effects = nullptr,
+	.effects = NULL,
 	.effect_count = 0,
 	.min_kelvin = LC_KELVIN_MIN,
 	.max_kelvin = LC_KELVIN_MAX,
@@ -55,11 +53,11 @@ static void publish_state(void) {
 	ha_state.brightness = st.brightness;
 	ha_state.color_temp = st.color_temp;
 	ha_state.effect = st.effect;
-	ha_state.color = {
-		.r = st.color.r,
-		.g = st.color.g,
-		.b = st.color.b,
-	};
+
+	ha_state.color.r = st.color.r;
+	ha_state.color.g = st.color.g;
+	ha_state.color.b = st.color.b;
+
 	ha_state.color_mode = (st.color_mode == LIGHT_MODE_RGB)
 		? HA_COLOR_MODE_RGB
 		: HA_COLOR_MODE_TEMP;
@@ -94,43 +92,45 @@ static void on_command(const uint8_t *payload, uint16_t length) {
 	uint8_t fields = ha_light_parse_command(payload, length, &ha_state);
 
 	if (fields & HA_LIGHT_FIELD_STATE) {
-		light_cmd_t cmd;
+		struct light_cmd_t cmd;
 		cmd.type = LIGHT_CMD_POWER;
 		cmd.power = ha_state.enabled;
 		light_send_cmd(&cmd);
 	}
 
 	if (fields & HA_LIGHT_FIELD_BRIGHTNESS) {
-		light_cmd_t cmd;
+		struct light_cmd_t cmd;
 		cmd.type = LIGHT_CMD_BRIGHTNESS;
 		cmd.brightness = ha_state.brightness;
 		light_send_cmd(&cmd);
 	}
 
 	if (fields & HA_LIGHT_FIELD_EFFECT) {
-		light_cmd_t cmd;
+		struct light_cmd_t cmd;
 		cmd.type = LIGHT_CMD_EFFECT;
 		cmd.effect_name = ha_state.effect;
 		light_send_cmd(&cmd);
 	}
 
 	if (fields & HA_LIGHT_FIELD_COLOR) {
-		light_cmd_t cmd;
+		struct light_cmd_t cmd;
 		cmd.type = LIGHT_CMD_COLOR;
-		cmd.color = {ha_state.color.r, ha_state.color.g, ha_state.color.b};
+		cmd.color.r = ha_state.color.r;
+		cmd.color.g = ha_state.color.g;
+		cmd.color.b = ha_state.color.b;
 		light_send_cmd(&cmd);
 	} else if (fields & HA_LIGHT_FIELD_COLOR_TEMP) {
-		light_cmd_t cmd;
+		struct light_cmd_t cmd;
 		cmd.type = LIGHT_CMD_COLOR_TEMP;
 		cmd.color_temp = ha_state.color_temp;
 		light_send_cmd(&cmd);
 	}
 
 	state_publish_pending = true;
-	state_publish_at = millis() + HA_STATE_DELAY_MS;
+	state_publish_at = atto_now() + HA_STATE_DELAY_MS;
 
 	state_save_pending = true;
-	state_save_at = millis() + HA_SAVE_DELAY_MS;
+	state_save_at = atto_now() + HA_SAVE_DELAY_MS;
 }
 
 static void on_ha_status(const uint8_t *payload, uint16_t length) {
@@ -140,7 +140,7 @@ static void on_ha_status(const uint8_t *payload, uint16_t length) {
 	publish_state();
 }
 
-void ha_light_init(void) {
+void mqtt_ha_init(void) {
 	ha_device.name = device_name();
 	ha_device.id = device_id();
 	ha_device.mqtt_namespace = device_id();
@@ -155,13 +155,13 @@ void ha_light_init(void) {
 	mqtt_subscribe(HA_STATUS_TOPIC, on_ha_status);
 }
 
-void ha_light_loop(void) {
+void mqtt_ha_loop(void) {
 	if (!mqtt_is_connected()) {
 		was_connected = false;
 		return;
 	}
 
-	unsigned long now = millis();
+	unsigned long now = atto_now();
 
 	if (!was_connected) {
 		was_connected = true;

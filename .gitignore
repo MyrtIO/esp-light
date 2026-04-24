@@ -6,7 +6,5 @@
 
 # Artifacts
 .pio
-.supercode
 .cache
-src/provisioning_page.*
 .DS_Store

@@ -1,6 +1,7 @@
 #include "wifi_manager.h"
-#include <WiFi.h>
 #include <Arduino.h>
+#include <WiFi.h>
+#include <string.h>
 
 static const wifi_runtime_config_t *cfg;
 static bool connected = false;
@@ -13,6 +14,19 @@ static bool wifi_has_sta_config(void) {
 
 static bool wifi_ap_should_be_enabled(void) {
 	return provisioning_enabled || !wifi_has_sta_config();
+}
+
+static size_t copy_ip_string(IPAddress ip, char *buf, size_t buf_size) {
+	if (buf == NULL || buf_size == 0) {
+		return 0;
+	}
+
+	String ip_string = ip.toString();
+	size_t len = ip_string.length();
+	size_t copy_len = (len < (buf_size - 1)) ? len : (buf_size - 1);
+	memcpy(buf, ip_string.c_str(), copy_len);
+	buf[copy_len] = '\0';
+	return copy_len;
 }
 
 static void wifi_begin_sta(void) {
@@ -137,18 +151,24 @@ const char *wifi_network_mode_string(void) {
 	}
 }
 
-IPAddress wifi_sta_ip(void) {
+size_t wifi_sta_ip_string(char *buf, size_t buf_size) {
 	if (!connected) {
-		return IPAddress();
+		if (buf != NULL && buf_size > 0) {
+			buf[0] = '\0';
+		}
+		return 0;
 	}
-	return WiFi.localIP();
+	return copy_ip_string(WiFi.localIP(), buf, buf_size);
 }
 
-IPAddress wifi_ap_ip(void) {
+size_t wifi_ap_ip_string(char *buf, size_t buf_size) {
 	if (!wifi_ap_should_be_enabled()) {
-		return IPAddress();
+		if (buf != NULL && buf_size > 0) {
+			buf[0] = '\0';
+		}
+		return 0;
 	}
-	return WiFi.softAPIP();
+	return copy_ip_string(WiFi.softAPIP(), buf, buf_size);
 }
 
 void wifi_mac_address(uint8_t mac[6]) {

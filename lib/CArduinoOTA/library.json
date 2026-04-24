@@ -1,0 +1,8 @@
+{
+    "name": "CArduinoOTA",
+    "version": "1.0.0",
+    "description": "C wrapper for ArduinoOTA",
+    "dependencies": {},
+    "frameworks": "Arduino",
+    "platforms": "*"
+}

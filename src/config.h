@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define CONFIG_MQTT_BUFFER_SIZE 1024
 #define CONFIG_LIGHT_LED_MAX_COUNT 256
 #define CONFIG_LIGHT_CONTROLLER WS2811
@@ -10,4 +14,13 @@
 
 #ifndef CONFIG_LIGHT_PIN_CTL
 #define CONFIG_LIGHT_PIN_CTL 25
+#endif
+
+void device_id_init();
+const char *device_id();
+const char *device_hostname();
+const char *device_name();
+
+#ifdef __cplusplus
+}
 #endif

@@ -1,11 +1,7 @@
-#include "mqtt.h"
-#include "wifi_manager.h"
-#include <WiFiClient.h>
+#include "cpubsub.h"
+#include <WiFi.h>
 #include <PubSubClient.h>
 #include <Arduino.h>
-
-#define MQTT_MAX_SUBSCRIPTIONS 8
-#define MQTT_RECONNECT_INTERVAL 5000
 
 struct mqtt_subscription_t {
 	const char *topic;
@@ -16,7 +12,7 @@ static WiFiClient wifi_client;
 static PubSubClient client(wifi_client);
 
 static const mqtt_config_t *cfg;
-static mqtt_subscription_t subscriptions[MQTT_MAX_SUBSCRIPTIONS];
+static mqtt_subscription_t subscriptions[CPUBSUB_MAX_SUBSCRIPTIONS];
 static uint8_t subscription_count = 0;
 static unsigned long last_connect_attempt = 0;
 static bool was_connected = false;
@@ -28,7 +24,7 @@ static bool mqtt_has_config(void) {
 	return cfg != NULL && cfg->host != NULL && cfg->host[0] != '\0';
 }
 
-static void on_message(char *topic, byte *payload, unsigned int length) {
+static void on_message(char *topic, byte *payload, uint16_t length) {
 	for (uint8_t i = 0; i < subscription_count; i++) {
 		if (strcmp(topic, subscriptions[i].topic) == 0) {
 			subscriptions[i].handler(payload, length);
@@ -79,7 +75,7 @@ void mqtt_loop(void) {
 		return;
 	}
 
-	if (!wifi_sta_is_connected()) {
+	if (WiFi.status() != WL_CONNECTED) {
 		was_connected = false;
 		return;
 	}
@@ -94,7 +90,7 @@ void mqtt_loop(void) {
 
 	was_connected = false;
 	unsigned long now = millis();
-	if (now - last_connect_attempt < MQTT_RECONNECT_INTERVAL) {
+	if (now - last_connect_attempt < cfg->reconnect_delay) {
 		return;
 	}
 	last_connect_attempt = now;
@@ -119,7 +115,7 @@ void mqtt_loop(void) {
 }
 
 void mqtt_subscribe(const char *topic, mqtt_handler_t handler) {
-	if (subscription_count >= MQTT_MAX_SUBSCRIPTIONS) {
+	if (subscription_count >= CPUBSUB_MAX_SUBSCRIPTIONS) {
 		return;
 	}
 	subscriptions[subscription_count].topic = topic;

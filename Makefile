@@ -44,7 +44,7 @@ provisioning-page:
 	@cd $(PROVISIONING_PAGE_DIR); bun run build
 	@python3 scripts/bin2source.py \
 	    $(PROVISIONING_PAGE_DIR)/dist/index.html.gz \
-		$(PROVISIONING_PAGE_DIR) \
+		$(PROVISIONING_PAGE_DIR)/dist/page \
 		provisioning_page
 
 .PHONY: esp32dev-firmware
