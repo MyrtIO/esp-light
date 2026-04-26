@@ -36,7 +36,7 @@ format:
 	@find \
 		lib/ \
 		src/ \
-		-iname '*.h' -o -iname '*.c' -iname '*.cpp' \
+		-iname '*.h' -o -iname '*.c' -o -iname '*.cpp' \
 		| xargs clang-format -i
 
 .PHONY: provisioning-page
