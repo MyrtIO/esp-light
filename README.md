@@ -34,21 +34,26 @@ Same as `esp32dev`, but `WS2812 DIN` should be connected to `GPIO 18`.
 
 ## Build and Flash
 
-The default serial port is hardcoded in [`Makefile`](./Makefile). In most cases, override it from the command line:
+`BOARD_TTY` is optional and is only needed when PlatformIO cannot auto-detect the device or when multiple boards are connected.
+For `lolin s2 mini`, the runtime USB CDC port is usually `/dev/cu.usbmodem*` on macOS, not `/dev/ttyUSB0`.
 
 ### esp32dev
 
 ```sh
 make esp32dev-firmware
 make BOARD_TTY=/dev/ttyUSB0 esp32dev-flash
+make BOARD_TTY=/dev/ttyUSB0 monitor
 ```
 
 ### lolin s2 mini
 
 ```sh
 make s2-mini-firmware
-make BOARD_TTY=/dev/ttyUSB0 s2-mini-flash
+make BOARD_TTY=/dev/cu.usbmodemXXXX s2-mini-flash
+make BOARD_TTY=/dev/cu.usbmodemXXXX monitor
 ```
+
+If the `s2 mini` firmware crashes before the USB CDC port stays up, hold `BOOT`, tap `RESET`, then release `BOOT` to force the ROM bootloader and reflash over USB.
 
 ## OTA Update
 

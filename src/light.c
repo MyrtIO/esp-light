@@ -6,10 +6,14 @@
 #include <freertos/queue.h>
 #include <light_composer.h>
 #include <attotime.h>
+#include <esp32-hal.h>
+#include <esp_log.h>
 
 #include "light_hal.h"
 #include "persistent_data.h"
 #include "config.h"
+
+static const char *TAG = "Light";
 
 static const lc_hal_t hal = {
     .set_pixel = light_hal_set_pixel,
@@ -174,8 +178,18 @@ void light_init(light_config_t *cfg) {
 }
 
 void light_start(void) {
-    xTaskCreatePinnedToCore(render_task, "light", 4096, NULL, 10,
-                            &render_task_handle, 1);
+    BaseType_t task_result =
+    #if defined(CONFIG_IDF_TARGET_ESP32S2)
+        xTaskCreateUniversal(render_task, "light", 4096, NULL, 10,
+                             &render_task_handle, ARDUINO_RUNNING_CORE);
+    #else
+        xTaskCreatePinnedToCore(render_task, "light", 4096, NULL, 10,
+                                &render_task_handle, 1);
+    #endif
+    if (task_result != pdPASS) {
+        render_task_handle = NULL;
+        ESP_LOGE(TAG, "render task create failed: %ld", (long)task_result);
+    }
 }
 
 void light_send_cmd(light_cmd_t *cmd) {

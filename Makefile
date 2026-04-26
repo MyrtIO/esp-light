@@ -1,7 +1,12 @@
-BOARD_TTY = /dev/cu.wchusbserial58B90790221
-BOARD_HOST =
-BAUD_RATE = 115200
-OTA_PORT = 3232
+BOARD_TTY ?=
+BOARD_HOST ?=
+BAUD_RATE ?= 115200
+OTA_PORT ?= 3232
+
+ifneq ($(strip $(BOARD_TTY)),)
+PIO_UPLOAD_PORT_ARG = --upload-port $(BOARD_TTY)
+PIO_MONITOR_PORT_ARG = --port $(BOARD_TTY)
+endif
 
 PROVISIONING_PAGE_DIR = provisioning_page
 ESPTOOL = pio pkg exec -- esptool.py
@@ -20,7 +25,7 @@ endef
 
 define flash_firmware
 	make provisioning-page
-	pio run -e $(1) -t upload
+	pio run -e $(1) -t upload $(PIO_UPLOAD_PORT_ARG)
 endef
 
 configure:
@@ -29,7 +34,7 @@ configure:
 
 .PHONY: monitor
 monitor:
-	@pio device monitor --no-reconnect --port $(BOARD_TTY) --baud $(BAUD_RATE)
+	@pio device monitor --no-reconnect $(PIO_MONITOR_PORT_ARG) --baud $(BAUD_RATE)
 
 .PHONY: format
 format:

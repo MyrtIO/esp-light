@@ -48,7 +48,7 @@ static void build_wifi_config(void) {
         .ssid = pdata.wifi_ssid,
         .password = pdata.wifi_password,
         .hostname = device_hostname(),
-        .ap_ssid = device_name(),
+        .ap_ssid = device_hostname(),
         .reconnect_interval_ms = 15000,
     };
 }
@@ -116,31 +116,38 @@ static uint32_t now_u32(void) {
 void setup() {
     Serial.begin(115200);
     delay(50);
+    Serial.println("Booting...");
     pinMode(CONFIG_PROVISIONING_BUTTON_GPIO, INPUT_PULLUP);
 
+    Serial.println("Initializing base");
     device_id_init();
     atto_init(now_u32);
 
+    Serial.println("Loading persistent data");
     persistent_data_load(&pdata);
     rebuild_runtime_config();
     bool has_saved_light_state = light_state_exists();
 
+    Serial.println("Initializing network");
     cwifi_init(&wifi_cfg, provisioning_enabled());
     cpubsub_init(&mqtt_cfg);
+
+    Serial.println("Initializing light");
     light_init(&light_cfg);
     if (has_saved_light_state) {
         light_state_load(&saved_state);
         light_restore_state(&saved_state);
     }
     light_start();
-
     if (!has_saved_light_state) {
         set_default_light_state();
     }
 
+    Serial.println("Initializing web");
     mqtt_ha_init();
     web_init(&pdata, &light_cfg, on_configuration_changed);
     web_start();
+    Serial.println("Boot complete");
 }
 
 void loop() {
