@@ -2,7 +2,6 @@
 #include <esp_system.h>
 #include <button.h>
 #include <cpubsub.h>
-#include <string.h>
 
 #include "config.h"
 #include "persistent_data.h"
