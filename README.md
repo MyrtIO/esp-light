@@ -52,7 +52,27 @@ make BOARD_TTY=/dev/ttyUSB0 s2-mini-flash
 
 ## OTA Update
 
-The firmware uses standard `ArduinoOTA` / `espota` over both the STA connection and the provisioning AP. After the first wired flash, upload new builds over Wi-Fi:
+The firmware supports two OTA paths after the first wired flash.
+
+### HTTP OTA From The Web UI
+
+This path works well when the device is reachable over HTTP but cannot open a reverse TCP connection back to the uploader host.
+
+1. Build the firmware for the target board.
+2. Open the device web UI over its STA IP or provisioning AP IP.
+3. In the `Система` section, use `HTTP OTA` to select `.pio/build/<env>/firmware.bin`.
+4. Upload the file and wait for the device reboot.
+
+Examples:
+
+```sh
+make esp32dev-firmware
+make s2-mini-firmware
+```
+
+### ArduinoOTA / espota
+
+The firmware also keeps standard `ArduinoOTA` / `espota` over both the STA connection and the provisioning AP. Use this path only when the device can open a TCP connection back to the machine running `espota.py`.
 
 ### esp32dev
 
@@ -85,6 +105,7 @@ Hold the button on `GPIO0` for about 3 seconds to enable or disable the setup AP
 
 - Wi-Fi credentials are stored in NVS and used on every boot
 - The web setup remains available over the STA IP address when the device is connected to Wi-Fi
+- HTTP OTA updates are available from the web UI over the STA IP address and provisioning AP
 - OTA updates are available over `espota` over both STA and the provisioning AP
 - MQTT default port is `1883`
 - MQTT client ID and topic namespace are generated as `myrtio_light_XXYY`

@@ -3,7 +3,7 @@ BOARD_HOST =
 BAUD_RATE = 115200
 OTA_PORT = 3232
 
-PROVISIONING_PAGE_DIR = src/provisioning_page
+PROVISIONING_PAGE_DIR = provisioning_page
 ESPTOOL = pio pkg exec -- esptool.py
 ESPOTA = python3 $(HOME)/.platformio/packages/framework-arduinoespressif32/tools/espota.py
 
@@ -14,7 +14,7 @@ define build_firmware
 endef
 
 define upload_ota
-	pio run -e $(1) -t
+	pio run -e $(1)
 	$(ESPOTA) -i $(BOARD_HOST) -p $(OTA_PORT) -f .pio/build/$(1)/firmware.bin
 endef
 
@@ -44,7 +44,7 @@ provisioning-page:
 	@cd $(PROVISIONING_PAGE_DIR); bun run build
 	@python3 scripts/bin2source.py \
 	    $(PROVISIONING_PAGE_DIR)/dist/index.html.gz \
-		$(PROVISIONING_PAGE_DIR)/dist/page \
+		src/provisioning_page \
 		provisioning_page
 
 .PHONY: esp32dev-firmware

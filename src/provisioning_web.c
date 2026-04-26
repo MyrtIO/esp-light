@@ -1,22 +1,39 @@
 #include "provisioning_web.h"
-#include <cwebserver.h>
+
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <strings.h>
 #include <lwjson/lwjson.h>
 #include <lwjson/lwjson_serializer.h>
-#include <string.h>
+#include <attotime.h>
+#include <cupdate.h>
+#include <cwebserver.h>
+#include <cwifi_manager.h>
 
+#include "provisioning_page.h"
 #include "config.h"
-#include "cwifi_manager.h"
-#include "provisioning_page/dist/page.h"
 
 #define LK(s) (s), (sizeof(s) - 1)
 #define PARSE_TOKENS 32
 #define JSON_BUF_SIZE 768
 #define IP_BUF_SIZE 16
+#define OTA_ERROR_BUF_SIZE 96
+#define OTA_HEADER_BUF_SIZE 128
+#define OTA_FILENAME_BUF_SIZE 64
+#define OTA_RESTART_DELAY_MS 1500UL
 
 static persistent_data_t *s_pdata;
 static light_config_t *s_light_cfg;
 static web_configuration_changed_cb_t s_on_configuration_changed;
 static char json_buf[JSON_BUF_SIZE];
+static const char *csrf_headers[] = {"Origin", "Host"};
+static bool s_ota_upload_started = false;
+static bool s_ota_upload_finished = false;
+static bool s_ota_restart_pending = false;
+static unsigned long s_ota_restart_at_ms = 0;
+static char s_ota_error[OTA_ERROR_BUF_SIZE];
 
 /* --- Color order helpers --- */
 
@@ -36,7 +53,7 @@ static uint8_t color_order_from_str(const char *str) {
 	return 0;
 }
 
-/* --- Serializer helper --- */
+/* --- Serializer helpers --- */
 
 static bool ser_finalize(lwjson_serializer_t *ser) {
 	size_t len = 0;
@@ -47,6 +64,60 @@ static bool ser_finalize(lwjson_serializer_t *ser) {
 		json_buf[len] = '\0';
 	}
 	return true;
+}
+
+static bool send_json_message(int code, const char *field, const char *message) {
+	lwjson_serializer_t ser;
+	if (lwjson_serializer_init(&ser, json_buf, sizeof(json_buf) - 1) != lwjsonOK) {
+		cwebserver_send(500, "application/json", "{\"error\":\"serializer\"}");
+		return false;
+	}
+
+	lwjson_serializer_start_object(&ser, NULL, 0);
+	lwjson_serializer_add_string(&ser, field, strlen(field), message, strlen(message));
+	lwjson_serializer_end_object(&ser);
+
+	if (!ser_finalize(&ser)) {
+		cwebserver_send(500, "application/json", "{\"error\":\"serializer\"}");
+		return false;
+	}
+
+	cwebserver_send(code, "application/json", json_buf);
+	return true;
+}
+
+static void send_json_error(int code, const char *message) {
+	send_json_message(code, "error", message);
+}
+
+static void send_ota_success(void) {
+	lwjson_serializer_t ser;
+	if (lwjson_serializer_init(&ser, json_buf, sizeof(json_buf) - 1) != lwjsonOK) {
+		cwebserver_send(500, "application/json", "{\"error\":\"serializer\"}");
+		return;
+	}
+
+	lwjson_serializer_start_object(&ser, NULL, 0);
+	lwjson_serializer_add_string(
+		&ser,
+		LK("message"),
+		LK("Прошивка загружена. Устройство перезагрузится через несколько секунд.")
+	);
+	lwjson_serializer_add_bool(&ser, LK("rebooting"), 1);
+	lwjson_serializer_end_object(&ser);
+
+	if (!ser_finalize(&ser)) {
+		cwebserver_send(500, "application/json", "{\"error\":\"serializer\"}");
+		return;
+	}
+
+	cwebserver_send(200, "application/json", json_buf);
+}
+
+/* --- Request helpers --- */
+
+static size_t request_body(char *buf, size_t buf_size) {
+	return cwebserver_body(buf, buf_size);
 }
 
 /* --- Parser helpers --- */
@@ -109,7 +180,7 @@ static void parse_light_fields(lwjson_t *parser, const lwjson_token_t *parent) {
 /* --- Light config rebuild --- */
 
 static void rebuild_config(void) {
-	s_light_cfg->pin              = CONFIG_LIGHT_PIN_CTL;
+	s_light_cfg->pin              = CONFIG_LIGHT_CTL_GPIO;
 	s_light_cfg->led_count        = s_pdata->led_count;
 	s_light_cfg->led_skip         = s_pdata->skip_leds;
 	s_light_cfg->color_correction = s_pdata->color_correction;
@@ -120,6 +191,47 @@ static void rebuild_config(void) {
 	s_light_cfg->transition_ms    = CONFIG_LIGHT_TRANSITION_COLOR;
 	s_light_cfg->brightness       = s_pdata->brightness_min;
 	s_light_cfg->brightness_max   = s_pdata->brightness_max;
+}
+
+/* --- OTA helpers --- */
+
+static void ota_reset_state(void) {
+	s_ota_upload_started = false;
+	s_ota_upload_finished = false;
+	s_ota_error[0] = '\0';
+}
+
+static void ota_set_error(const char *message) {
+	snprintf(s_ota_error, sizeof(s_ota_error), "%s", message);
+}
+
+static void ota_store_update_error(void) {
+	ota_set_error(cupdate_error_string());
+}
+
+static bool ota_origin_valid(void) {
+	char origin[OTA_HEADER_BUF_SIZE];
+	size_t origin_len = cwebserver_header("Origin", origin, sizeof(origin));
+	if (origin_len == 0) {
+		return true;
+	}
+
+	char host[OTA_HEADER_BUF_SIZE];
+	size_t host_len = cwebserver_header("Host", host, sizeof(host));
+	if (host_len == 0) {
+		return false;
+	}
+
+	char expected_http[OTA_HEADER_BUF_SIZE];
+	char expected_https[OTA_HEADER_BUF_SIZE];
+	snprintf(expected_http, sizeof(expected_http), "http://%s", host);
+	snprintf(expected_https, sizeof(expected_https), "https://%s", host);
+	return strcmp(origin, expected_http) == 0 || strcmp(origin, expected_https) == 0;
+}
+
+static void ota_schedule_restart(void) {
+	s_ota_restart_pending = true;
+	s_ota_restart_at_ms = atto_now() + OTA_RESTART_DELAY_MS;
 }
 
 /* --- API handlers --- */
@@ -178,7 +290,7 @@ static void handle_get_configuration(void *user_data) {
 
 static void handle_post_configuration(void *user_data) {
 	(void)user_data;
-	size_t body_len = cwebserver_body(json_buf, sizeof(json_buf));
+	size_t body_len = request_body(json_buf, sizeof(json_buf));
 
 	lwjson_token_t tokens[PARSE_TOKENS];
 	lwjson_t parser;
@@ -223,10 +335,8 @@ static void handle_post_configuration(void *user_data) {
 	}
 
 	lwjson_free(&parser);
-
+	persistent_data_sanitize(s_pdata);
 	persistent_data_save(s_pdata);
-	rebuild_config();
-	light_update_config(s_light_cfg);
 
 	cwebserver_send(204, "text/plain", "");
 	if (s_on_configuration_changed != NULL) {
@@ -236,7 +346,7 @@ static void handle_post_configuration(void *user_data) {
 
 static void handle_post_light_configuration(void *user_data) {
 	(void)user_data;
-	size_t body_len = cwebserver_body(json_buf, sizeof(json_buf));
+	size_t body_len = request_body(json_buf, sizeof(json_buf));
 
 	lwjson_token_t tokens[PARSE_TOKENS];
 	lwjson_t parser;
@@ -249,6 +359,7 @@ static void handle_post_light_configuration(void *user_data) {
 
 	parse_light_fields(&parser, NULL);
 	lwjson_free(&parser);
+	persistent_data_sanitize(s_pdata);
 
 	rebuild_config();
 	light_update_config(s_light_cfg);
@@ -258,7 +369,7 @@ static void handle_post_light_configuration(void *user_data) {
 
 static void handle_post_light_test(void *user_data) {
 	(void)user_data;
-	size_t body_len = cwebserver_body(json_buf, sizeof(json_buf));
+	size_t body_len = request_body(json_buf, sizeof(json_buf));
 
 	lwjson_token_t tokens[PARSE_TOKENS];
 	lwjson_t parser;
@@ -270,6 +381,10 @@ static void handle_post_light_test(void *user_data) {
 	}
 
 	light_cmd_t cmd;
+	uint8_t test_r = 0;
+	uint8_t test_g = 0;
+	uint8_t test_b = 0;
+	uint8_t test_brightness = 128;
 	cmd.type = LIGHT_CMD_COLOR;
 	cmd.color.r = 0;
 	cmd.color.g = 0;
@@ -285,6 +400,9 @@ static void handle_post_light_test(void *user_data) {
 	t = lwjson_find(&parser, "b");
 	if (t != NULL && t->type == LWJSON_TYPE_NUM_INT)
 		cmd.color.b = (uint8_t)lwjson_get_val_int(t);
+	test_r = cmd.color.r;
+	test_g = cmd.color.g;
+	test_b = cmd.color.b;
 	light_send_cmd(&cmd);
 
 	cmd.type = LIGHT_CMD_BRIGHTNESS;
@@ -292,6 +410,7 @@ static void handle_post_light_test(void *user_data) {
 	t = lwjson_find(&parser, "brightness");
 	if (t != NULL && t->type == LWJSON_TYPE_NUM_INT)
 		cmd.brightness = (uint8_t)lwjson_get_val_int(t);
+	test_brightness = cmd.brightness;
 	light_send_cmd(&cmd);
 
 	lwjson_free(&parser);
@@ -339,6 +458,76 @@ static void handle_get_system(void *user_data) {
 	cwebserver_send(200, "application/json", json_buf);
 }
 
+static void handle_post_ota_finished(void *user_data) {
+	(void)user_data;
+	cwebserver_send_header("Connection", "close", false);
+
+	if (!s_ota_upload_started) {
+		send_json_error(400, "Файл прошивки не получен.");
+		return;
+	}
+
+	if (s_ota_error[0] != '\0') {
+		send_json_error(500, s_ota_error);
+		return;
+	}
+
+	if (!s_ota_upload_finished) {
+		send_json_error(500, "Загрузка прошивки завершилась раньше времени.");
+		return;
+	}
+
+	cwebserver_client_set_no_delay(true);
+	send_ota_success();
+	ota_schedule_restart();
+}
+
+static void handle_post_ota_upload(void *user_data) {
+	(void)user_data;
+	cwebserver_upload_t upload;
+	if (!cwebserver_get_upload(&upload)) {
+		ota_set_error("Ошибка обработки загрузки прошивки.");
+		return;
+	}
+
+	if (upload.status == CWEBUPLOAD_START) {
+		ota_reset_state();
+		s_ota_upload_started = true;
+
+		if (!ota_origin_valid()) {
+			ota_set_error("Некорректный источник запроса.");
+			return;
+		}
+
+		char filename[OTA_FILENAME_BUF_SIZE];
+		cwebserver_upload_filename(filename, sizeof(filename));
+
+		uint32_t max_sketch_space = (cupdate_get_max_size() - 0x1000) & 0xFFFFF000;
+		if (!cupdate_begin(max_sketch_space)) {
+			ota_store_update_error();
+		}
+	} else if (upload.status == CWEBUPLOAD_WRITE) {
+		if (s_ota_error[0] != '\0') {
+			return;
+		}
+
+		if (cupdate_write(upload.buf, upload.current_size) != upload.current_size) {
+			ota_store_update_error();
+		}
+	} else if (upload.status == CWEBUPLOAD_END) {
+		if (s_ota_error[0] == '\0' && !cupdate_end(true)) {
+			ota_store_update_error();
+		}
+
+		if (s_ota_error[0] == '\0') {
+			s_ota_upload_finished = true;
+		}
+	} else if (upload.status == CWEBUPLOAD_ABORTED) {
+		cupdate_abort();
+		ota_set_error("Загрузка была прервана.");
+	}
+}
+
 /* --- Public API --- */
 
 void web_init(
@@ -346,18 +535,28 @@ void web_init(
 	light_config_t *light_cfg,
 	web_configuration_changed_cb_t on_configuration_changed
 ) {
-	cwebserver_init(80);
 	s_pdata = pdata;
 	s_light_cfg = light_cfg;
 	s_on_configuration_changed = on_configuration_changed;
 	rebuild_config();
+	ota_reset_state();
+	s_ota_restart_pending = false;
 
+	cwebserver_init(80);
+	cwebserver_collect_headers(csrf_headers, sizeof(csrf_headers) / sizeof(csrf_headers[0]));
 	cwebserver_on("/", WEB_METHOD_GET, handle_page, NULL);
 	cwebserver_on("/api/configuration", WEB_METHOD_GET, handle_get_configuration, NULL);
 	cwebserver_on("/api/configuration", WEB_METHOD_POST, handle_post_configuration, NULL);
 	cwebserver_on("/api/configuration/light", WEB_METHOD_POST, handle_post_light_configuration, NULL);
 	cwebserver_on("/api/light/test", WEB_METHOD_POST, handle_post_light_test, NULL);
 	cwebserver_on("/api/system", WEB_METHOD_GET, handle_get_system, NULL);
+	cwebserver_on_with_upload(
+		"/api/ota",
+		WEB_METHOD_POST,
+		handle_post_ota_finished,
+		handle_post_ota_upload,
+		NULL
+	);
 }
 
 void web_start(void) {
@@ -366,4 +565,8 @@ void web_start(void) {
 
 void web_loop(void) {
 	cwebserver_loop();
+
+	if (s_ota_restart_pending && atto_now() >= s_ota_restart_at_ms) {
+		cupdate_restart();
+	}
 }

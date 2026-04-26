@@ -33,6 +33,7 @@ typedef struct light_saved_state_t {
 
 void persistent_data_load(persistent_data_t *data);
 void persistent_data_save(const persistent_data_t *data);
+void persistent_data_sanitize(persistent_data_t *data);
 bool persistent_data_is_configured(const persistent_data_t *data);
 
 bool light_state_exists(void);

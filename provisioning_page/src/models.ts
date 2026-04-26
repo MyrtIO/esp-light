@@ -8,6 +8,11 @@ export interface SystemInformation {
   mac_address: MacAddress;
 }
 
+export interface OtaUploadResult {
+  message: string;
+  rebooting: boolean;
+}
+
 export interface WifiConfiguration {
   ssid: string;
   password: string;

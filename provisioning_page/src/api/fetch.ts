@@ -2,6 +2,7 @@ import type {
   Configuration,
   LightConfiguration,
   LightTestRequest,
+  OtaUploadResult,
   SystemInformation,
 } from "../models";
 import type { ApiService } from "./interface";
@@ -36,6 +37,65 @@ export class FetchApiService implements ApiService {
     return this.fetchGetJson<SystemInformation>("/system");
   }
 
+  async uploadFirmware(
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<OtaUploadResult> {
+    return this.withLock(
+      () =>
+        new Promise<OtaUploadResult>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", `${this.baseUrl}/ota`);
+
+          xhr.upload.onprogress = (event) => {
+            if (!event.lengthComputable || !onProgress) {
+              return;
+            }
+
+            onProgress(Math.round((event.loaded / event.total) * 100));
+          };
+
+          xhr.onerror = () => {
+            reject(new Error("Не удалось загрузить прошивку."));
+          };
+
+          xhr.onabort = () => {
+            reject(new Error("Загрузка прошивки прервана."));
+          };
+
+          xhr.onload = () => {
+            const response = this.parseJsonResponse<
+              OtaUploadResult & { error?: string }
+            >(xhr.responseText);
+
+            if (xhr.status >= 200 && xhr.status < 300) {
+              onProgress?.(100);
+              resolve(
+                response ?? {
+                  message:
+                    "Прошивка загружена. Устройство перезагрузится через несколько секунд.",
+                  rebooting: true,
+                }
+              );
+              return;
+            }
+
+            reject(
+              new Error(
+                response?.error ||
+                  xhr.statusText ||
+                  "Загрузка прошивки завершилась с ошибкой."
+              )
+            );
+          };
+
+          const formData = new FormData();
+          formData.append("firmware", file, file.name);
+          xhr.send(formData);
+        })
+    );
+  }
+
   private async fetchGetJson<T>(url: string): Promise<T> {
     return this.withLock(async () => {
       const response = await fetch(`${this.baseUrl}${url}`);
@@ -68,6 +128,18 @@ export class FetchApiService implements ApiService {
       return result;
     } finally {
       unlock();
+    }
+  }
+
+  private parseJsonResponse<T>(raw: string): T | null {
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return null;
     }
   }
 }

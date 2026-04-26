@@ -2,6 +2,7 @@ import type {
   Configuration,
   LightConfiguration,
   LightTestRequest,
+  OtaUploadResult,
   SystemInformation,
 } from "../models";
 import type { ApiService } from "./interface";
@@ -61,6 +62,28 @@ export class MockApiService implements ApiService {
       sta_ip: "192.168.1.34",
       ap_ip: "192.168.4.1",
       mac_address: [160, 183, 101, 22, 48, 84],
+    };
+  }
+
+  async uploadFirmware(
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<OtaUploadResult> {
+    console.log(`[mock] uploading firmware`, {
+      file,
+    });
+
+    onProgress?.(5);
+    await simulateNetworkDelay(200, 200);
+    onProgress?.(41);
+    await simulateNetworkDelay(250, 250);
+    onProgress?.(83);
+    await simulateNetworkDelay(200, 200);
+    onProgress?.(100);
+
+    return {
+      message: "Прошивка загружена. Устройство перезагрузится через несколько секунд.",
+      rebooting: true,
     };
   }
 }

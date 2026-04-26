@@ -151,6 +151,20 @@
                     <div class="label">AP IP</div>
                     <div class="value" id="ap-ip" style="color: var(--text-secondary)">192.168.4.1</div>
                 </div>
+                <div class="row ota-row">
+                    <div class="label">HTTP OTA</div>
+                    <div class="value ota-panel">
+                        <input id="ota-file" class="ota-file-input" type="file" accept=".bin" />
+                        <div class="ota-file-name" id="ota-file-name">Файл не выбран</div>
+                        <div class="ota-actions">
+                            <button type="button" id="button-ota-select" class="btn _secondary">Выбрать .bin</button>
+                            <button type="button" id="button-ota-upload" class="btn">Загрузить</button>
+                        </div>
+                        <div class="ota-status" id="ota-status">
+                            Выберите .bin из .pio/build/&lt;env&gt;/firmware.bin и загрузите его в устройство.
+                        </div>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="label">Подсказка</div>
                     <div class="value" style="color: var(--text-secondary)">
