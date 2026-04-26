@@ -11,16 +11,22 @@
 
 #define LIGHT_HAL_RMT_RESOLUTION_HZ 10000000U
 #define LIGHT_HAL_RMT_TX_QUEUE_DEPTH 4U
-#define LIGHT_HAL_WS2811_T0H_TICKS 5U
-#define LIGHT_HAL_WS2811_T0L_TICKS 20U
-#define LIGHT_HAL_WS2811_T1H_TICKS 12U
-#define LIGHT_HAL_WS2811_T1L_TICKS 13U
-#define LIGHT_HAL_WS2811_RESET_TICKS 250U
+#define LIGHT_HAL_WS2812_T0H_TICKS 4U
+#define LIGHT_HAL_WS2812_T0L_TICKS 8U
+#define LIGHT_HAL_WS2812_T1H_TICKS 8U
+#define LIGHT_HAL_WS2812_T1L_TICKS 4U
+#define LIGHT_HAL_WS2812_RESET_TICKS 250U
 
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define LIGHT_HAL_RMT_MEM_BLOCK_SYMBOLS 64U
 #else
 #define LIGHT_HAL_RMT_MEM_BLOCK_SYMBOLS 48U
+#endif
+
+#if defined(SOC_RMT_SUPPORT_DMA)
+#define LIGHT_HAL_RMT_USE_DMA 1U
+#else
+#define LIGHT_HAL_RMT_USE_DMA 0U
 #endif
 
 typedef struct {
@@ -122,13 +128,13 @@ static esp_err_t light_hal_new_encoder(rmt_encoder_handle_t *ret_encoder) {
 
     rmt_bytes_encoder_config_t bytes_encoder_config = {};
     bytes_encoder_config.bit0.level0 = 1;
-    bytes_encoder_config.bit0.duration0 = LIGHT_HAL_WS2811_T0H_TICKS;
+    bytes_encoder_config.bit0.duration0 = LIGHT_HAL_WS2812_T0H_TICKS;
     bytes_encoder_config.bit0.level1 = 0;
-    bytes_encoder_config.bit0.duration1 = LIGHT_HAL_WS2811_T0L_TICKS;
+    bytes_encoder_config.bit0.duration1 = LIGHT_HAL_WS2812_T0L_TICKS;
     bytes_encoder_config.bit1.level0 = 1;
-    bytes_encoder_config.bit1.duration0 = LIGHT_HAL_WS2811_T1H_TICKS;
+    bytes_encoder_config.bit1.duration0 = LIGHT_HAL_WS2812_T1H_TICKS;
     bytes_encoder_config.bit1.level1 = 0;
-    bytes_encoder_config.bit1.duration1 = LIGHT_HAL_WS2811_T1L_TICKS;
+    bytes_encoder_config.bit1.duration1 = LIGHT_HAL_WS2812_T1L_TICKS;
     bytes_encoder_config.flags.msb_first = 1;
 
     esp_err_t err =
@@ -148,9 +154,9 @@ static esp_err_t light_hal_new_encoder(rmt_encoder_handle_t *ret_encoder) {
 
     strip_encoder->reset_code = (rmt_symbol_word_t){
         .level0 = 0,
-        .duration0 = LIGHT_HAL_WS2811_RESET_TICKS,
+        .duration0 = LIGHT_HAL_WS2812_RESET_TICKS,
         .level1 = 0,
-        .duration1 = LIGHT_HAL_WS2811_RESET_TICKS,
+        .duration1 = LIGHT_HAL_WS2812_RESET_TICKS,
     };
 
     *ret_encoder = &strip_encoder->base;
@@ -225,7 +231,7 @@ void light_hal_init(void) {
     rmt_channel_config.mem_block_symbols = LIGHT_HAL_RMT_MEM_BLOCK_SYMBOLS;
     rmt_channel_config.resolution_hz = LIGHT_HAL_RMT_RESOLUTION_HZ;
     rmt_channel_config.trans_queue_depth = LIGHT_HAL_RMT_TX_QUEUE_DEPTH;
-    rmt_channel_config.flags.with_dma = true;
+    rmt_channel_config.flags.with_dma = LIGHT_HAL_RMT_USE_DMA;
     rmt_channel_config.flags.invert_out = false;
 
     esp_err_t err = rmt_new_tx_channel(&rmt_channel_config, &s_rmt_channel);
@@ -248,7 +254,7 @@ void light_hal_init(void) {
         return;
     }
 
-    ESP_LOGI(TAG, "rmt strip ready gpio=%d symbols=%u bytes=%u",
+    ESP_LOGI(TAG, "rmt strip ready gpio=%d symbols=%u bytes=%u dma=%u",
              CONFIG_LIGHT_CTL_GPIO, (unsigned)LIGHT_HAL_RMT_MEM_BLOCK_SYMBOLS,
-             (unsigned)sizeof(raw_leds));
+             (unsigned)sizeof(raw_leds), (unsigned)LIGHT_HAL_RMT_USE_DMA);
 }
